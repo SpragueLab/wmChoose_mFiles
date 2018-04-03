@@ -105,7 +105,7 @@ end
 % by a channel or a pair of cols in ii_cfg.trialinfo
 
 % first, select relevant epochs (should be one selection per trial)
-%[ii_data,ii_cfg] = ii_selectfixationsbytrial(ii_data,ii_cfg,'XDAT',4,'last',300); % 
+[ii_data,ii_cfg] = ii_selectfixationsbytrial(ii_data,ii_cfg,'XDAT',4,'last',300); % 
 
 
 [targ_coords,coord_idx,dist_from_targs] = ii_nearestcoord(ii_data,ii_cfg,targ_coords);

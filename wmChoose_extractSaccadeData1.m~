@@ -143,13 +143,9 @@ for ss = 1:length(subj)
             
             % pick which coord (trialinfo(:,[2 3] or [4 5]) was responded
             % to
-            thistarg = this_cfg.trialinfo(tt,6);
-            if isnan(thistarg)
-                thistarg = 1; % when nan, default to 1st coord, but make sure s_all.sel_targ remains nan(below)
-            end
-            this_coord = this_cfg.trialinfo(tt,[1 2]+thistarg); 
-            clear thistarg; 
-            s_all.sel_targ(thisidx(tt)) = this_cfg.trialinfo(tt,6); % intentionally save a NaN if necessary
+            
+            this_coord = this_cfg.trialinfo(tt,[1 2]+this_cfg.trialinfo(tt,6));
+            s_all.sel_targ(thisidx(tt)) = this_cfg.trialinfo(tt,6);
             s_all.sel_coord(thisidx(tt),:) = this_coord;
             
             
@@ -277,7 +273,7 @@ for ss = 1:length(subj)
     for tt = 1:length(thisidx)
         % rotate all so that i_sacc, f_sacc are at known position...
         thistarg = s_all.sel_targ(thisidx(tt));
-        if isnan(thistarg) % handle trials that can't be unambiguously scored
+        if isnan(thistarg)
             thistarg = 1;
         end
         [tmpth,tmpr] = cart2pol(s_all.i_sacc_raw(thisidx(tt),1),s_all.i_sacc_raw(thisidx(tt),2));
@@ -288,7 +284,7 @@ for ss = 1:length(subj)
         [tmpth,tmpr] = cart2pol(s_all.f_sacc_raw(thisidx(tt),1),s_all.f_sacc_raw(thisidx(tt),2));
         tmpth = tmpth - deg2rad(thisbehav.c_all(thisidx(tt),1 + thistarg));
         [s_all.f_sacc(thisidx(tt),1),s_all.f_sacc(thisidx(tt),2)] = pol2cart(tmpth,tmpr);
-        clear tmpth tmpr thistarg;
+        clear tmpth tmpr;
     end
     clear thisidx;
     

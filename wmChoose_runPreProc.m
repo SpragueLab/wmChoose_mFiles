@@ -71,6 +71,7 @@ for ss = 1:length(subj)
 %         end
         
         close all;
+        close all hidden;
         clear preproc_fn trial_info cond thisbehav matf fns block_num this_edf thisbehav;
     end
     
