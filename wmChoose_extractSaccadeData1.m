@@ -233,11 +233,13 @@ for ss = 1:length(subj)
             % TODO: look for saccades that land back at fixation after
             % initial and before final - probably drop these trials...
             
+            % TODO: exclude fixation-gaps that are not accompanied by pupil
+            % gaps?
+            
             clear this_i_sacc this_f_sacc;
             
         end
         
-        % ~~~~~~ original version (before 12/19/2017)
         
         
         
