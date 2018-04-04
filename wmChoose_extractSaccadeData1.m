@@ -1,6 +1,7 @@
 % wmChoose_extractSaccadeData1.m (from MGSMap_extractSaccadeData1.m)
 %
 % extracts simple versions of initial, final saccades, saves them for use
+% - also, for convenience, extracts X, Y, XDAT, Pupil for each trial
 
 
 
@@ -9,7 +10,6 @@
 function wmChoose_extractSaccadeData1(subj)
 
 
-root = wmChoose_loadRoot;
 
 
 if nargin < 1 || isempty(subj)
@@ -18,9 +18,13 @@ if nargin < 1 || isempty(subj)
     
 end
 
+if ~iscell(subj)
+    subj = {subj};
+end
 
 root = '/Volumes/data/wmChoose';
 
+save_chan = {'X','Y','Pupil','XDAT'}; % what we want to extract & save for each trial
 
 %% DEFINE PARAMETERS TO SELECT PRIMARY SACCADES
 %  examine first saccade during relevant epoch
@@ -76,25 +80,18 @@ for ss = 1:length(subj)
         this_data = this_et.ii_data;
         this_sacc = tmp_this_sacc.ii_sacc;
         
-        
-        % TODO::::: use this_sacc to extract saccade info, not
-        % ii_selectfixationsbytrial hack below!!!!
+
         
         if ii == 1
-            
-            %                 nblank = length(iEye_fn)*this_cfg.numtrials;
-            %
-            %                 i_sacc = nan(nblank,2);
-            %                 f_sacc = nan(nblank,2);
-            %
-            %                 i_sacc_err = nan(nblank,1);
-            %                 f_sacc_err = nan(nblank,1);
-            %
-            %                 i_sacc_rt = nan(nblank,1);
+
             
             s_all = thisbehav.s_all;
             
             nblank = size(s_all.i_sacc,1);
+            
+            for chan_idx = 1:length(save_chan)
+                s_all.(save_chan{chan_idx}) = cell(nblank,1);
+            end
             
             % also want to store the raw coordinates
             s_all.i_sacc_raw = nan(size(s_all.i_sacc));
@@ -140,6 +137,10 @@ for ss = 1:length(subj)
         % loop over trials
         for tt = 1:this_cfg.numtrials
             
+            % save the data from each channel from each trial
+            for chan_idx = 1:length(save_chan)
+                s_all.(save_chan{chan_idx}){thisidx(tt)} = this_data.(save_chan{chan_idx})(this_cfg.trialvec==tt);
+            end
             
             % pick which coord (trialinfo(:,[2 3] or [4 5]) was responded
             % to
@@ -147,7 +148,7 @@ for ss = 1:length(subj)
             if isnan(thistarg)
                 thistarg = 1; % when nan, default to 1st coord, but make sure s_all.sel_targ remains nan(below)
             end
-            this_coord = this_cfg.trialinfo(tt,[1 2]+thistarg); 
+            this_coord = this_cfg.trialinfo(tt,[1 2]+1+(thistarg-1)*2); 
             clear thistarg; 
             s_all.sel_targ(thisidx(tt)) = this_cfg.trialinfo(tt,6); % intentionally save a NaN if necessary
             s_all.sel_coord(thisidx(tt),:) = this_coord;

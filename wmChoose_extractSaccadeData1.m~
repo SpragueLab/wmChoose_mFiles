@@ -1,6 +1,7 @@
 % wmChoose_extractSaccadeData1.m (from MGSMap_extractSaccadeData1.m)
 %
 % extracts simple versions of initial, final saccades, saves them for use
+% - also, for convenience, extracts X, Y, XDAT, Pupil for each trial
 
 
 
@@ -9,7 +10,6 @@
 function wmChoose_extractSaccadeData1(subj)
 
 
-root = wmChoose_loadRoot;
 
 
 if nargin < 1 || isempty(subj)
@@ -18,6 +18,9 @@ if nargin < 1 || isempty(subj)
     
 end
 
+if ~iscell(subj)
+    subj = {subj};
+end
 
 root = '/Volumes/data/wmChoose';
 
@@ -94,7 +97,8 @@ for ss = 1:length(subj)
             
             s_all = thisbehav.s_all;
             
-            nblank = size(s_all.i_sacc,1);
+            for chan_idx = 1:length(save_chan)
+                s_all.(save_chan{chan_idx}) = cell(
             
             % also want to store the raw coordinates
             s_all.i_sacc_raw = nan(size(s_all.i_sacc));
@@ -143,9 +147,13 @@ for ss = 1:length(subj)
             
             % pick which coord (trialinfo(:,[2 3] or [4 5]) was responded
             % to
-            
-            this_coord = this_cfg.trialinfo(tt,[1 2]+this_cfg.trialinfo(tt,6));
-            s_all.sel_targ(thisidx(tt)) = this_cfg.trialinfo(tt,6);
+            thistarg = this_cfg.trialinfo(tt,6);
+            if isnan(thistarg)
+                thistarg = 1; % when nan, default to 1st coord, but make sure s_all.sel_targ remains nan(below)
+            end
+            this_coord = this_cfg.trialinfo(tt,[1 2]+thistarg); 
+            clear thistarg; 
+            s_all.sel_targ(thisidx(tt)) = this_cfg.trialinfo(tt,6); % intentionally save a NaN if necessary
             s_all.sel_coord(thisidx(tt),:) = this_coord;
             
             
@@ -273,7 +281,7 @@ for ss = 1:length(subj)
     for tt = 1:length(thisidx)
         % rotate all so that i_sacc, f_sacc are at known position...
         thistarg = s_all.sel_targ(thisidx(tt));
-        if isnan(thistarg)
+        if isnan(thistarg) % handle trials that can't be unambiguously scored
             thistarg = 1;
         end
         [tmpth,tmpr] = cart2pol(s_all.i_sacc_raw(thisidx(tt),1),s_all.i_sacc_raw(thisidx(tt),2));
@@ -284,7 +292,7 @@ for ss = 1:length(subj)
         [tmpth,tmpr] = cart2pol(s_all.f_sacc_raw(thisidx(tt),1),s_all.f_sacc_raw(thisidx(tt),2));
         tmpth = tmpth - deg2rad(thisbehav.c_all(thisidx(tt),1 + thistarg));
         [s_all.f_sacc(thisidx(tt),1),s_all.f_sacc(thisidx(tt),2)] = pol2cart(tmpth,tmpr);
-        clear tmpth tmpr;
+        clear tmpth tmpr thistarg;
     end
     clear thisidx;
     

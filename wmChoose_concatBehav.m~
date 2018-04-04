@@ -75,7 +75,6 @@ for ss = 1:length(subj)
         s_all.f_sacc_err = [];
         s_all.srt = [];
         r_all = [];  % run #
-        t_all = []; % trial #
         
         coords_all{1} = [];
         coords_all{2} = [];
@@ -89,10 +88,9 @@ for ss = 1:length(subj)
             fprintf('loading %s...\n',fnb);
             bdata = load(fnb);
             
-            rnum = str2double(myfm_b(ff).name(strfind(myfm_b(ff).name,'_r')+[2 3]));
+            rnum = myfm_b(ff).name();
             
-            r_all = [r_all; rnum*ones(bdata.p.ntrials,1)];
-            t_all = [t_all; (1:bdata.p.ntrials).'];
+            r_all = [r_all; ff*ones(bdata.p.ntrials,1)];
             %t_map = [t_map; bdata.tasktiming.segStart - bdata.tasktiming.expStartTime];
             %t_map = [t_map; [bdata.p.delay_start bdata.p.resp_start]-bdata.p.expt_start];
             c_all = [c_all; bdata.p.conditions bdata.p.targ_angs];
@@ -156,7 +154,7 @@ for ss = 1:length(subj)
         % save everything
         fn2s = sprintf('%s/%s_wmChoose_behav.mat',root_target,subj{ss});
         fprintf('saving to %s...\n',fn2s);
-        save(fn2s,'c_all','p_all','r_all','s_all','t_all','coords_all','colors_all');
+        save(fn2s,'c_all','p_all','r_all','s_all','coords_all','colors_all');
         
         % clear those things..
     %end

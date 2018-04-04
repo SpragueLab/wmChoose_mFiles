@@ -3,7 +3,8 @@ close all;
 root = '/Volumes/data/wmChoose';
 ifg_fn = '/Volumes/tommy/Documents/MATLAB/toolboxes_dev/iEye_ts/examples/p_1000hz.ifg';
 
-subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag'}; %aa1
+%subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag'}; %aa1
+subj = {'ae'};
 
 runs_with_err = {};
 errs = {};
@@ -28,6 +29,9 @@ for ss = 1:length(subj)
     fns = sprintf('%s/data/%s_r*_%s_*.edf',root,subj{ss},fn_prefix);
     thisf = dir(fns);
     clear fns;
+    
+    % remove files that are "r00"
+    
     
     for ff = 1:length(thisf)
         
