@@ -4,7 +4,7 @@ root = '/Volumes/data/wmChoose';
 ifg_fn = '/Volumes/tommy/Documents/MATLAB/toolboxes_dev/iEye_ts/examples/p_1000hz.ifg';
 
 %subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag'}; %aa1
-subj = {'ae'};
+subj = {'af'};
 
 runs_with_err = {};
 errs = {};
@@ -16,7 +16,8 @@ ii_params = ii_loadparams;
 ii_params.trial_end_value = 5;
 ii_params.drift_epoch = [1 2];
 ii_params.calibrate_epoch = 4;
-ii_params.calibrate_select_mode = 'nearest';
+ii_params.calibrate_select_mode = 'last';
+ii_params.calibrate_window = 300;
 ii_params.blink_window = [200 200];
 ii_params.plot_epoch = [3 4];
 ii_params.calibrate_limits = [0.75 1.333]; % original ecc b/w 9 and 16...
@@ -63,16 +64,13 @@ for ss = 1:length(subj)
         % set up trialinfo
         trial_info = horzcat(thisbehav.conditions,thisbehav.targ_coords{:});
 
-
+        if block_num == 7
+        end
         
         preproc_fn = sprintf('%s/preproc_iEye/%s_%s_r%02.f_preproc.mat',root,subj{ss},fn_prefix,block_num);
         
-       % try
-            wmChoose_preproc1(this_edf,ifg_fn,preproc_fn,coords,trial_info,ii_params);
-%         catch
-%             runs_with_err{end+1} = this_edf;
-%             errs{end+1} = lasterror;
-%         end
+       
+        wmChoose_preproc1(this_edf,ifg_fn,preproc_fn,coords,trial_info,ii_params);
         
         close all;
         close all hidden;

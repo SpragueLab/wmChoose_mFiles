@@ -15,6 +15,7 @@ function wmChoose_extractSaccadeData1(subj)
 if nargin < 1 || isempty(subj)
     %subj = {'KD','CC','EK','MR','AB'};
     subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag'}; %aa1
+    %subj = {'ac1','ac2'};
     
 end
 
@@ -45,6 +46,7 @@ excl_criteria.i_err_thresh = 5;   % i_sacc must be within this many DVA of targe
 
 excl_criteria.drift_thresh = 2.5;     % if drift correction norm is this big or more, drop
 excl_criteria.delay_fix_thresh = 2.5; % if any fixation is this far from 0,0 during delay (epoch 3)
+excl_criteria.delay_raw_dur_thresh = 0.5; % if total of this many s of raw gaze points deviate from fixation window, drop trial
 
 resp_epoch = 3; % when did subj make a response? (when were they allowed to start responding)
 delay_epoch = 2;
@@ -92,6 +94,11 @@ for ss = 1:length(subj)
             for chan_idx = 1:length(save_chan)
                 s_all.(save_chan{chan_idx}) = cell(nblank,1);
             end
+            
+            % save features related to drift correction; calibration
+            s_all.drift = nan(size(s_all.i_sacc,1),2);
+            s_all.calib = nan(size(s_all.i_sacc,1),2);
+            s_all.calib_excl = cell(size(s_all.i_sacc,1),1); % if dropped from calibration, why?
             
             % also want to store the raw coordinates
             s_all.i_sacc_raw = nan(size(s_all.i_sacc));
@@ -189,6 +196,10 @@ for ss = 1:length(subj)
                 s_all.f_sacc_trace{thisidx(tt)} = [this_sacc.X_trace{this_f_sacc} this_sacc.Y_trace{this_f_sacc}];
             end
             
+            % store calibration, drift correction
+            s_all.drift(thisidx(tt),:) = this_cfg.drift.amt(tt,:);
+            s_all.calib(thisidx(tt),:) = this_cfg.calibrate.amt(tt,:);
+            
             
             % ~~~~~ FIRST: exclude based on trial-level features (see above)
             
@@ -200,15 +211,23 @@ for ss = 1:length(subj)
             % CALIBRATION OUTSIDE OF RANGE
             if this_cfg.calibrate.adj(tt)~=1
                 s_all.excl_trial{thisidx(tt)}(end+1) = 12;
+                s_all.calib_excl{thisidx(tt)} = this_cfg.calibrate.excl_info{tt};
             end
             
             % DURING DELAY, FIXATION OUTSIDE OF RANGE
             
             % find fixations in this trial; epoch
             this_fix_idx = this_cfg.trialvec==tt & this_data.XDAT==delay_epoch;
-            if max(sqrt(this_data.X_fix(this_fix_idx).^2+this_data.Y_fix(this_fix_idx).^2)) > excl_criteria.delay_fix_thresh
+            if max(sqrt(this_data.X_fix(this_fix_idx).^2+this_data.Y_fix(this_fix_idx).^2)) > excl_criteria.delay_fix_thresh || ...
+                sum(sqrt(this_data.X(this_fix_idx).^2+this_data.Y(this_fix_idx).^2) > excl_criteria.delay_fix_thresh)*(1/this_cfg.hz) > excl_criteria.delay_raw_dur_thresh
+            
                 s_all.excl_trial{thisidx(tt)}(end+1) = 13;
             end
+            
+            % TODO: also check if a total of 500 ms (or more) of X,Y
+            % samples within that epoch are outside of range (same error
+            % code)
+            
             
             % ~~~~ SECOND: exclude based on primary saccade features
             % first, if there's no primary saccade found...
