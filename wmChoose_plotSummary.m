@@ -426,6 +426,7 @@ for ss = 1:length(subj)
     saveas(gcf,sprintf('%s/preproc_QC/%s_proportionExcluded.png',root,subj{ss}));
     
     
+    
     clear this_data;
     
     if length(subj)>1

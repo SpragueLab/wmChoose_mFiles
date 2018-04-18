@@ -18,6 +18,8 @@ u_subj = unique(cellfun(@(s) s(1:2),subj,'uniformoutput',0));
 
 TARG_ECC = 12;
 
+niter = 1000;
+
 all_data = [];
 
 startidx = 1;
@@ -47,7 +49,7 @@ all_data.subj_all = all_subj;
 all_data.use_trial = ~cellfun( @any, cellfun( @(a) ismember(a, WHICH_EXCL), all_data.s_all.excl_trial, 'UniformOutput',false));
 
 % drop trials with very short (< 100 ms) or very long RT (> 1 s)
-all_data.use_trial(all_data.s_all.i_sacc_rt<0.1 | all_data.s_all.i_sacc_rt>1) = 0;
+all_data.use_trial(all_data.s_all.i_sacc_rt<0.1 | all_data.s_all.i_sacc_rt>1.5) = 0;
 
 %% first, plot mean i_sacc, f_sacc error as a function of condition
 
@@ -56,6 +58,7 @@ scatter_fig = figure;
 
 to_plot = {'i_sacc_err','f_sacc_err','i_sacc_rt'};
 cu = unique(all_data.c_all(:,1));
+
 cond_str = {'R1','R2-cue','R2-choose'};
 
 cond_colors = lines(length(cu));
@@ -251,3 +254,95 @@ match_ylim(get(fig_std_sum,'Children'));
 % TODO: 
 % - trial exclusion % by condition (maybe broken down by exclusion type?)
 % - trace for each condition; distribution for each condition
+
+%% stats - shuffle condition labels within each subj before computing distributions, F-scores
+% - use only included trials? yes
+
+% set the random number generator before we do stats
+rng(wmChoose_randSeed());
+
+allF = nan(length(to_plot_2d),length(dim_to_plot),niter+1);   % params x dimensions x iterations?
+allT = cell(size(cond_pairs,1),1);  % each of these same dims as above
+for cp_idx = 1:size(cond_pairs,1)
+    allT{cp_idx} = nan(length(to_plot_2d),length(dim_to_plot),niter+1);
+end
+
+all_labels = [all_data.c_all(all_data.use_trial==1,1) all_data.subj_all(all_data.use_trial==1)]; % 1 column for condition, 1 for subj
+
+% first iteration is 'real' (only shuffle on 2nd-nth iteration
+
+for ii = 1:(niter+1)
+    
+    % if ii ~= 1, shuffle labels within each subj
+    if ii~=1
+        this_labels = nan(size(all_labels));
+        this_labels(:,2) = all_labels(:,2);
+        for ss = 1:length(u_subj)
+            tmplabel = all_labels(all_labels(:,2)==ss,1);
+            this_labels(all_labels(:,2)==ss,1) = tmplabel(randperm(length(tmplabel)));
+        end
+    else
+        this_labels = all_labels;
+    end
+    
+    
+    % for saccade parameters
+    for pp = 1:length(to_plot_2d)
+        
+        % radial, tangential error
+        for dd = 1:length(dim_to_plot)
+            
+            % dependent variable - filtered the same way as above!
+            this_data = all_data.s_all.(to_plot_2d{pp})(all_data.use_trial==1,dim_to_plot(dd));
+            
+            % now extract standard dev for each subj, condition
+            
+            % DV, IV, SUBJ
+            thisX = nan(length(u_subj)*length(cu),3);
+            cnt = 1;
+            for ss = 1:length(u_subj)
+                for cc = 1:length(cu)
+                    thisidx = this_labels(:,1)==cu(cc) & this_labels(:,2)==ss;
+                    thisX(cnt,:) = [std(this_data(thisidx)) cc ss];
+                    cnt = cnt+1;
+                    clear thisidx;
+                end
+            end
+            
+            allF(pp,dd,ii) = RMAOV1(thisX);
+            
+            for cp_idx = 1:size(cond_pairs,1)
+%                 if ii == 1
+%                     allT{cp_idx} = nan(length(to_plot_2d),length(dim_to_plot),niter+1);
+%                 end
+                [~,~,~,tmp_stats] = ttest(thisX(thisX(:,2)==cond_pairs(cp_idx,1),1),thisX(thisX(:,2)==cond_pairs(cp_idx,2),1));
+                allT{cp_idx}(pp,dd,ii) = tmp_stats.tstat;
+                clear tmp_stats;
+            end
+            
+            clear cnt thisX;
+            
+        end
+        
+    end
+end
+
+fprintf('\n\n1-way repeated-measures ANOVA (against %i shuffling iterations):\n',niter);
+for pp = 1:length(to_plot_2d)
+    for dd = 1:length(dim_to_plot)
+        fprintf('%s, %s:\tF = %0.03f, p = %0.03f\n',to_plot_2d{pp},dim_str{dd},allF(pp,dd,1),mean(squeeze(allF(pp,dd,2:end))>=allF(pp,dd,1)));
+    end
+end
+
+fprintf('\n\nPaired t-test for eacn condition pair (against %i shuffling iterations):\n',niter);
+for cp_idx = 1:size(cond_pairs,1)
+    fprintf('\n%s vs %s\n',cond_str{cond_pairs(cp_idx,1)},cond_str{cond_pairs(cp_idx,2)});
+    for pp = 1:length(to_plot_2d)
+        for dd = 1:length(dim_to_plot)
+            thisp = 2*mean( squeeze(abs(allT{cp_idx}(pp,dd,2:end))) >= abs(allT{cp_idx}(pp,dd,1))   );
+            fprintf('%s, %s:\tT = %0.03f, p = %0.03f\n',to_plot_2d{pp},dim_str{dd},allT{cp_idx}(pp,dd,1),thisp);
+                
+        end
+    end
+    %fprintf('\n');
+end
