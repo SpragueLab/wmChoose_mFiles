@@ -167,6 +167,7 @@ dim_str = {'Radial','Tangential'}; % x, y after rotating
 this_nrows = length(dim_to_plot)*length(to_plot_2d);
 
 all_std = nan(length(dim_to_plot),length(to_plot_2d),length(cu),length(u_subj)); % store std dev for each condition; subj (dumb way for now...)
+all_mu  = nan(length(dim_to_plot),length(to_plot_2d),length(cu),length(u_subj)); % store mean for each condition; subj (relative to target)
 
 fig_dist = figure;
 for pp = 1:length(to_plot_2d)
@@ -190,6 +191,7 @@ for pp = 1:length(to_plot_2d)
                 [thish,thise] = histcounts(all_data.s_all.(to_plot_2d{pp})(thisidx,dim_to_plot(dd)) - dim_targ(dd),'BinWidth',0.5,'Normalization','pdf');
                 plot(mean([thise(1:end-1);thise(2:end)],1),thish,'-','LineWidth',1,'Color',cond_colors(cc,:));
                 
+                all_mu(dd,pp,cc,ss) = mean(all_data.s_all.(to_plot_2d{pp})(thisidx,dim_to_plot(dd)) - dim_targ(dd));
                 all_std(dd,pp,cc,ss) = std(all_data.s_all.(to_plot_2d{pp})(thisidx,dim_to_plot(dd)) - dim_targ(dd));
                 
                 clear thish thise;
@@ -250,6 +252,41 @@ for pp = 1:length(to_plot_2d)
     end
 end
 match_ylim(get(fig_std_sum,'Children'));
+set(gcf,'Name','Standard deviation','NumberTitle','off');
+
+% and all the means
+fig_mu_sum = figure;
+for pp = 1:length(to_plot_2d)
+    for dd = 1:length(dim_to_plot)
+        
+        subplot(length(to_plot_2d),length(dim_to_plot),dd+(pp-1)*length(to_plot_2d)); hold on;
+        
+        plot(1:length(cu),squeeze(all_mu(dd,pp,:,:)),'o-','Color',[0.5 0.5 0.5]);
+        
+        for cc = 1:length(cu)
+            
+            thismu = mean(squeeze(all_mu(dd,pp,cc,:)));
+            
+            plot(cc+[-0.35 0.35],thismu*[1 1],'-','LineWidth',2,'Color',cond_colors(cc,:));
+            
+            clear thismu;
+        end
+        
+        set(gca,'XTick',1:length(cu),'XTickLabel',cond_str,'XTickLabelRotation',-45);
+        xlim([0.35 3.65]);
+        
+        if dd == 1
+            ylabel(to_plot_2d{pp},'Interpreter','none');
+        end
+        
+        if pp == 1
+            title(dim_str{dd});
+        end
+        
+    end
+end
+match_ylim(get(fig_mu_sum,'Children'));
+set(gcf,'Name','Bias','NumberTitle','off');
 
 % TODO: 
 % - trial exclusion % by condition (maybe broken down by exclusion type?)
