@@ -8,7 +8,7 @@
 
 root = '/Volumes/data/wmChoose/';
 
-subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag'};
+subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag',};
 
 WHICH_EXCL = [11 13 20 21 22]; % don't exclude trials w/ calibration failures for now...
 
@@ -220,6 +220,12 @@ match_ylim(get(gcf,'Children'));
 set(get(gcf,'Children')','YTickLabel',[]);
 
 
+
+% TODO: add a 3rd dimension of all_std which is the error collapsed across
+% radial/tangential
+%
+% then, automatically plot and do stats on that dimension below
+
 % now plot all the std devs
 fig_std_sum = figure;
 for pp = 1:length(to_plot_2d)
@@ -252,6 +258,45 @@ for pp = 1:length(to_plot_2d)
     end
 end
 match_ylim(get(fig_std_sum,'Children'));
+set(gcf,'Name','Standard deviation','NumberTitle','off');
+
+
+%% also do this for 'average' error (avg of rad/tang std dev)
+
+fig_std_sum_avg = figure;
+for pp = 1:length(to_plot_2d)
+    
+        
+        subplot(length(to_plot_2d),1,pp); hold on;
+        
+        plot(1:length(cu),squeeze(mean(all_std(:,pp,:,:),1)),'o-','Color',[0.5 0.5 0.5]);
+        
+        for cc = 1:length(cu)
+            
+            thismu = mean(squeeze(mean(all_std(:,pp,cc,:),1)));
+            
+            plot(cc+[-0.35 0.35],thismu*[1 1],'-','LineWidth',2,'Color',cond_colors(cc,:));
+            
+            clear thismu;
+        end
+        
+        set(gca,'XTick',1:length(cu),'XTickLabel',cond_str,'XTickLabelRotation',-45);
+        xlim([0.35 3.65]);
+        
+        if dd == 1
+            ylabel(to_plot_2d{pp},'Interpreter','none');
+        end
+        
+        if pp == 1
+            title('Average error (both dimensions)');
+        end
+        
+    
+end
+match_ylim(get(fig_std_sum_avg,'Children'));
+set(gcf,'Name','Standard deviation - average','NumberTitle','off');
+
+
 
 % and all the means
 fig_mu_sum = figure;
@@ -285,7 +330,7 @@ for pp = 1:length(to_plot_2d)
     end
 end
 match_ylim(get(fig_mu_sum,'Children'));
-set(gcf,'Name','Me
+set(gcf,'Name','Bias','NumberTitle','off');
 
 % TODO: 
 % - trial exclusion % by condition (maybe broken down by exclusion type?)
