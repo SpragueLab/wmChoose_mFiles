@@ -21,32 +21,47 @@
 
 root = '/Volumes/data/wmChoose';
 
-%subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag'}; 
-subj = {'ae','af','ag'}; 
+%subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag'};
+subj = {'ai'};
 
-% which trials do we want to exclude in the final sumamry plot? 
+QC_dir = 'preproc_QC';
+
+% which trials do we want to exclude in the final sumamry plot?
 % (for report, etc, will still use all criteria, at least for each one
 % individually, but we may not wish to actually drop trials based on
 % these)
-WHICH_EXCL = [11 13 20 21 22]; % NOTE: will always show all exclusion criteria on each subplot, but 
+WHICH_EXCL = [11 13 20 21 22]; % NOTE: will always show all exclusion criteria on each subplot, but
 
 % for final exclusion report at the end
 all_excl = [11 12 13 20 21 22];
 excl_labels = {'drift','calibration','delay fixation','no i_sacc','bad i_sacc','i_sacc err'};
 
+SAMPLING_RATE = 1000;
+SAMPLING_PER  = 1/SAMPLING_RATE;
+
 
 % for plotting: how many rows/cols for 2d trial plots (hopefully a bunch!)
 NROWS_2D = 10;
-NROWS_1D = 30; 
+NROWS_1D = 30;
 NCOLS_1D = 10;
+
+NROWS_FULLTRIAL = 8;
+NCOLS_FULLTRIAL = 10; % for plotting full trial timecourse
+
+tmp_lines = lines(7);
 
 TARG_COLORS = lines(5);
 TARG_COLORS = TARG_COLORS(4:5,:);
 FIG_POS_2D = [34 501 2508 816];
 FIG_POS_1D = [1000 120 1402 1218];
-SACC_COLORS = [0 0 0; lines(1)];
+SACC_COLORS = [0 0 0; tmp_lines(3,:)];
 
 EXCL_COLOR = [0.8 0 0];
+
+% XDAT tags that are useful
+XDAT_RESP = 3;
+XDAT_PRERESP = [1 2];
+XDAT_ITI = 5;
 
 RAW_COLORS = lines(2); % for 1d traces (X,Y)
 
@@ -77,15 +92,15 @@ for ss = 1:length(subj)
             NCOLS_2D = max(this_data.t_all);
         end
         thiscol = this_data.t_all(ii);
-
-%         if thiscol==1
-%             thisrow
-%             this_data.r_all(ii)
-%         end
-
+        
+        %         if thiscol==1
+        %             thisrow
+        %             this_data.r_all(ii)
+        %         end
+        
         
         subplot(NROWS_2D,NCOLS_2D,(thisrow-1)*NCOLS_2D+thiscol); hold on;
-
+        
         % if trial is excluded (per our chosen criteria!), mark with red ring; otherwise, black
         if ismember(this_data.s_all.excl_trial{ii},WHICH_EXCL)
             plot(15*cos(linspace(2*pi/180,2*pi,180)), 15*sin(linspace(2*pi/180,2*pi,180)),'-','Color',EXCL_COLOR);
@@ -105,7 +120,7 @@ for ss = 1:length(subj)
             % mark it w/ red i_sacc trace
             if ismember(this_data.s_all.excl_trial{ii},[21 22])
                 plot(this_data.s_all.i_sacc_trace{ii}(:,1),this_data.s_all.i_sacc_trace{ii}(:,2),'-','LineWidth',1.5,'Color',EXCL_COLOR);
-            % otherwise, black
+                % otherwise, black
             else
                 plot(this_data.s_all.i_sacc_trace{ii}(:,1),this_data.s_all.i_sacc_trace{ii}(:,2),'-','LineWidth',1.5,'Color',SACC_COLORS(1,:));
             end
@@ -150,13 +165,13 @@ for ss = 1:length(subj)
         
         axis square off;
         xlim([-15 15]);ylim([-15 15]);
-       
-
+        
+        
         if thisrow==NROWS_2D && thiscol==NCOLS_2D && ii~=size(this_data.c_all,1)
             figs_2d(end+1) = figure; set(gcf,'Position',FIG_POS_2D); fig_cnt = fig_cnt+1; % we'll need a new figure for next iteration
-            set(gcf,'NumberTitle','off','Name',sprintf('%s (%i of %i)',subj{ss},fig_cnt,nfigs));        
+            set(gcf,'NumberTitle','off','Name',sprintf('%s (%i of %i)',subj{ss},fig_cnt,nfigs));
         end
-
+        
         clear thiscol thisrow
         
     end
@@ -170,42 +185,42 @@ for ss = 1:length(subj)
     % 1d plot of each trial, pre-go-cue, colored accoridng to whether trial
     % excluded
     
-    figure; set(gcf,'Position',FIG_POS_1D);fig_cnt = 1;
-    for ii = 1:size(this_data.c_all,1)
-        thisrow = this_data.t_all(ii);
-        thiscol = this_data.r_all(ii);
-
-        thiscol = mod(thiscol,NCOLS_1D);
-        if thiscol==0
-            thiscol = NCOLS_1D;
-        end
-        
-        subplot(NROWS_1D,NCOLS_1D,(thisrow-1)*NCOLS_1D+thiscol); hold on;
-        
-        preresp_idx = ismember(this_data.s_all.XDAT{ii},[1 2]);
-        
-        plot(0.001*(1:sum(preresp_idx)).',zeros(sum(preresp_idx),1),'k--');
-        
-        if isempty(this_data.s_all.excl_trial{ii})
-            % draw solid
-            plot(0.001*(1:sum(preresp_idx)).',this_data.s_all.X{ii}(preresp_idx),'-','LineWidth',1.5,'Color',RAW_COLORS(1,:));
-            plot(0.001*(1:sum(preresp_idx)).',this_data.s_all.Y{ii}(preresp_idx),'-','LineWidth',1.5,'Color',RAW_COLORS(2,:));
-        else
-            % draw dashed?
-            plot(0.001*(1:sum(preresp_idx)).',this_data.s_all.X{ii}(preresp_idx),':','LineWidth',1.5,'Color',RAW_COLORS(1,:));
-            plot(0.001*(1:sum(preresp_idx)).',this_data.s_all.Y{ii}(preresp_idx),':','LineWidth',1.5,'Color',RAW_COLORS(2,:));
-        end
-        
-        ylim([-3 3]); xlim([0 4]);
-        axis off;
-        
-        % if we're on the last row, col and not last trial, open a new fig
-        if thisrow==NROWS_1D && thiscol==NCOLS_1D && ii~=size(this_data.c_all,1)
-            figure;set(gcf,'Position',FIG_POS_1D)
-        end
-        
-        clear preresp_idx thisrow thiscol;
-    end
+    %     figure; set(gcf,'Position',FIG_POS_1D);fig_cnt = 1;
+    %     for ii = 1:size(this_data.c_all,1)
+    %         thisrow = this_data.t_all(ii);
+    %         thiscol = this_data.r_all(ii);
+    %
+    %         thiscol = mod(thiscol,NCOLS_1D);
+    %         if thiscol==0
+    %             thiscol = NCOLS_1D;
+    %         end
+    %
+    %         subplot(NROWS_1D,NCOLS_1D,(thisrow-1)*NCOLS_1D+thiscol); hold on;
+    %
+    %         preresp_idx = ismember(this_data.s_all.XDAT{ii},[1 2]);
+    %
+    %         plot(0.001*(1:sum(preresp_idx)).',zeros(sum(preresp_idx),1),'k--');
+    %
+    %         if isempty(this_data.s_all.excl_trial{ii})
+    %             % draw solid
+    %             plot(0.001*(1:sum(preresp_idx)).',this_data.s_all.X{ii}(preresp_idx),'-','LineWidth',1.5,'Color',RAW_COLORS(1,:));
+    %             plot(0.001*(1:sum(preresp_idx)).',this_data.s_all.Y{ii}(preresp_idx),'-','LineWidth',1.5,'Color',RAW_COLORS(2,:));
+    %         else
+    %             % draw dashed?
+    %             plot(0.001*(1:sum(preresp_idx)).',this_data.s_all.X{ii}(preresp_idx),':','LineWidth',1.5,'Color',RAW_COLORS(1,:));
+    %             plot(0.001*(1:sum(preresp_idx)).',this_data.s_all.Y{ii}(preresp_idx),':','LineWidth',1.5,'Color',RAW_COLORS(2,:));
+    %         end
+    %
+    %         ylim([-3 3]); xlim([0 4]);
+    %         axis off;
+    %
+    %         % if we're on the last row, col and not last trial, open a new fig
+    %         if thisrow==NROWS_1D && thiscol==NCOLS_1D && ii~=size(this_data.c_all,1)
+    %             figure;set(gcf,'Position',FIG_POS_1D)
+    %         end
+    %
+    %         clear preresp_idx thisrow thiscol;
+    %     end
     
     
     % let's also try it the imagesc way...
@@ -224,12 +239,12 @@ for ss = 1:length(subj)
             % if this is the first trial of a new run on a new figure
             figs_1d(end+1)=figure;set(gcf,'Position',FIG_POS_1D);
         end
-
+        
         
         subplot(1,NCOLS_1D,(thisrow-1)*NCOLS_1D+thiscol); hold on;
         
-        preresp_idx = ismember(this_data.s_all.XDAT{ii},[1 2]);
-
+        preresp_idx = ismember(this_data.s_all.XDAT{ii},XDAT_PRERESP);
+        
         
         imagesc(0.001*(1:sum(preresp_idx)),this_data.t_all(ii),sqrt( this_data.s_all.X{ii}(preresp_idx).^2 + this_data.s_all.Y{ii}(preresp_idx).^2 ).');
         
@@ -243,7 +258,7 @@ for ss = 1:length(subj)
         end
         
         set(gca,'CLim',[0 1]*this_data.excl_criteria.delay_fix_thresh);
-
+        
         axis ij off tight;
     end
     for ff = 1:length(figs_1d)
@@ -302,11 +317,11 @@ for ss = 1:length(subj)
         % also draw the full timeseries of r
         [~,tmpr] = cart2pol(this_data.s_all.X{ii},this_data.s_all.Y{ii});
         thist = (0.001)*(1:length(tmpr)); % 1000 Hz...
-        startt = thist(find(this_data.s_all.XDAT{ii}==3,1,'first'))-0.5;
-        drawidx = this_data.s_all.XDAT{ii}~=5 & thist.'>=startt;
+        startt = thist(find(this_data.s_all.XDAT{ii}==XDAT_RESP,1,'first'))-0.5;
+        drawidx = this_data.s_all.XDAT{ii}~=XDAT_ITI & thist.'>=startt;
         plot(thist(drawidx)-startt-0.5,tmpr(drawidx),'-','Color',thiscolor);
         %TODO: also draw the saccades on top of this?
-           
+        
         
     end
     for ii = 1:2
@@ -324,6 +339,117 @@ for ss = 1:length(subj)
     end
     saveas(gcf,sprintf('%s/preproc_QC/%s_allTraces.png',root,subj{ss}));
     
+    
+    
+    %% ~~~~~ plot full trial timecourse, highlighting primary/final saccade
+    
+    % maybe do 10 trials across, 8 tall?
+    % - first, plot full X, Y timecourse
+    % - then,  use latency to plot X_trace, Y_trace of init, final saccade
+    
+    nfigs = ceil(size(this_data.c_all,1)/(NCOLS_FULLTRIAL*NROWS_FULLTRIAL));
+    figs_ft(1) = figure; set(gcf,'Position',FIG_POS_2D); fig_cnt = 1; %row_cnt = 1; col_cnt = 1; fig_cnt =1 ;
+    set(gcf,'NumberTitle','off','Name',sprintf('Full trial - %s (%i of %i)',subj{ss},fig_cnt,nfigs));
+    for ii = 1:size(this_data.c_all,1)
+        
+        thisrow = mod(ceil(ii/NCOLS_FULLTRIAL),NROWS_FULLTRIAL);
+        if thisrow==0
+            thisrow = NROWS_FULLTRIAL; % for subplot selection purposes...
+        end
+        
+        thiscol = mod(ii,NCOLS_FULLTRIAL);
+        if thiscol == 0
+            thiscol = NCOLS_FULLTRIAL;
+        end
+        %         if thiscol==1
+        %             thisrow
+        %             this_data.r_map(ii)
+        %         end
+        
+        
+        subplot(NROWS_FULLTRIAL,NCOLS_FULLTRIAL,(thisrow-1)*NCOLS_FULLTRIAL+thiscol); hold on;
+        
+        myt = (1:length(this_data.s_all.X{ii})) * SAMPLING_PER;
+        
+        
+        % when did response epoch start? (XDAT=4)
+        this_resp_start = myt(find(this_data.s_all.XDAT{ii}==XDAT_RESP,1,'first'));
+        this_resp_end   = myt(find(this_data.s_all.XDAT{ii}==XDAT_RESP,1,'last'));
+        
+        
+        % start by just plotting raw X, Y for this trial
+        
+        % TARG positions
+        plot([myt(1) myt(end)],[1 1]*this_data.coords_all{1}(ii,1),'--','Color',TARG_COLORS(1,:));
+        plot([myt(1) myt(end)],[1 1]*this_data.coords_all{1}(ii,2),'--','Color',TARG_COLORS(1,:));
+        plot([myt(1) myt(end)],[1 1]*this_data.coords_all{2}(ii,1),'--','Color',TARG_COLORS(2,:));
+        plot([myt(1) myt(end)],[1 1]*this_data.coords_all{2}(ii,2),'--','Color',TARG_COLORS(2,:));
+
+        plot([myt(1) myt(end)],[0 0],'k-');
+        
+        % plot start of response epoch
+        plot(this_resp_start*[1 1],[-15 15],'-','Color',[0.5 0.5 0.5]);
+        plot(this_resp_end*[1 1],  [-15 15],'-','Color',[0.5 0.5 0.5]);
+        
+        
+        % X, Y eye positions
+        plot(myt,this_data.s_all.X{ii},'-','LineWidth',1,'Color',RAW_COLORS(1,:));
+        plot(myt,this_data.s_all.Y{ii},'-','LineWidth',1,'Color',RAW_COLORS(2,:));
+        
+        
+        % overlay the primary saccade
+        i_sacc_t = (1:size(this_data.s_all.i_sacc_trace{ii},1)) * SAMPLING_PER + this_resp_start + this_data.s_all.i_sacc_rt(ii);
+        if ~isempty(this_data.s_all.i_sacc_trace{ii})
+            plot(i_sacc_t,this_data.s_all.i_sacc_trace{ii}(:,1),'-','LineWidth',2,'Color',SACC_COLORS(1,:));
+            plot(i_sacc_t,this_data.s_all.i_sacc_trace{ii}(:,2),'-','LineWidth',2,'Color',SACC_COLORS(1,:));
+        end
+        
+        if this_data.s_all.n_sacc(ii) >= 2
+            f_sacc_t = (1:size(this_data.s_all.f_sacc_trace{ii},1)) * SAMPLING_PER + this_resp_start + this_data.s_all.f_sacc_rt(ii);
+            if ~isempty(this_data.s_all.f_sacc_trace{ii})
+                plot(f_sacc_t,this_data.s_all.f_sacc_trace{ii}(:,1),'-','LineWidth',1.5,'Color',SACC_COLORS(2,:));
+                plot(f_sacc_t,this_data.s_all.f_sacc_trace{ii}(:,2),'-','LineWidth',1.5,'Color',SACC_COLORS(2,:));
+            end
+            
+        end
+        % run, trial, sess # (red if excluded)
+        % if actually exlcude (if ismember this trial, which_excl), red
+        % if satisfies an exclusion criterion (even if we don't exclude),
+        % italics
+        this_angle = 'normal';
+        this_color = [0 0 0];
+        if ~isempty(this_data.s_all.excl_trial{ii})
+            this_angle = 'italic';
+            if any(ismember(this_data.s_all.excl_trial{ii},WHICH_EXCL))
+                this_color = EXCL_COLOR;
+            end
+        end
+        text(0,15,sprintf('r%02.f, %02.f',this_data.r_all(ii),this_data.t_all(ii)),'FontSize',10,'FontAngle',this_angle,'Color',this_color);
+        
+        set(gca,'XLim',[0 15],'YLim',[-15 15]);
+        axis off;
+        
+        
+        if thisrow==NROWS_FULLTRIAL && thiscol==NCOLS_FULLTRIAL && ii~=size(this_data.c_all,1)
+            figs_ft(end+1) = figure; set(gcf,'Position',FIG_POS_2D); fig_cnt = fig_cnt+1; % we'll need a new figure for next iteration
+            set(gcf,'NumberTitle','off','Name',sprintf('Full trial - %s (%i of %i)',subj{ss},fig_cnt,nfigs));
+        end
+        
+        clear thiscol thisrow
+        
+    end
+    for ff = 1:length(figs_ft)
+        saveas(figs_ft(ff),sprintf('%s/%s/%s_fullTrial_%i_of_%i.png',root,QC_dir,subj{ss},ff,length(figs_ft)));
+    end
+    clear figs_ft;
+    
+    
+    
+    
+    
+    
+    
+    %%
     % exclusion report (bar graph; imgs)
     % first, make a subplot for each run and show n_trials x n_excl dots
     % indicating why a given trial was dropped (color it red if we use that
@@ -339,7 +465,7 @@ for ss = 1:length(subj)
         
         % which trials in this run?
         runidx = find(this_data.r_all==ru(rr));
-       
+        
         
         for tt = 1:length(runidx)
             % if there's something to plot...
