@@ -501,7 +501,7 @@ fprintf('\n\nAVERAGE ERROR (average of radial/tangential std dev\n');
 fprintf('1-way repeated-measures ANOVA (against %i shuffling iterations):\n',niter);
 for pp = 1:length(to_plot_2d)
     %for dd = 1:length(dim_to_plot)
-        fprintf('%s, avg:\tF = %0.03f, p = %0.03f\n',to_plot_2d{pp},allF(pp,dd,1),mean(squeeze(allF(pp,dd,2:end))>=allF(pp,dd,1)));
+        fprintf('%s, avg:\tF = %0.03f, p = %0.03f\n',to_plot_2d{pp},allF(pp,1),mean(squeeze(allF(pp,2:end))>=allF(pp,1)));
     %end
 end
 

@@ -14,8 +14,8 @@ function wmChoose_extractSaccadeData1(subj)
 
 if nargin < 1 || isempty(subj)
     %subj = {'KD','CC','EK','MR','AB'};
-    subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag'}; %aa1
-    %subj = {'ac1','ac2'};
+    subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag','ah','ai'}; %aa1
+    %subj = {'ah','ai'};
     
 end
 
@@ -48,8 +48,8 @@ excl_criteria.drift_thresh = 2.5;     % if drift correction norm is this big or 
 excl_criteria.delay_fix_thresh = 2.5; % if any fixation is this far from 0,0 during delay (epoch 3)
 excl_criteria.delay_raw_dur_thresh = 0.5; % if total of this many s of raw gaze points deviate from fixation window, drop trial
 
-resp_epoch = 3; % when did subj make a response? (when were they allowed to start responding)
-delay_epoch = 2;
+RESP_EPOCH = 3; % when did subj make a response? (when were they allowed to start responding)
+FIX_EPOCH = 2;
 
 for ss = 1:length(subj)
     
@@ -136,7 +136,9 @@ for ss = 1:length(subj)
         
         % which saccades are we even considering? those that start and
         % end during epoch 4
-        which_sacc = find(this_sacc.epoch_start==resp_epoch & this_sacc.epoch_end==resp_epoch);
+        %which_sacc = find(this_sacc.epoch_start==resp_epoch & this_sacc.epoch_end==resp_epoch);
+        which_sacc = find(ismember(this_sacc.epoch_start,RESP_EPOCH) & ismember(this_sacc.epoch_end,RESP_EPOCH));
+
         % TODO: maybe some other constraints - like duration/amp, etc?
         
         which_trials = this_sacc.trial_start(which_sacc);
@@ -160,27 +162,53 @@ for ss = 1:length(subj)
             s_all.sel_targ(thisidx(tt)) = this_cfg.trialinfo(tt,6); % intentionally save a NaN if necessary
             s_all.sel_coord(thisidx(tt),:) = this_coord;
             
+            % TODO: reject trial if s_all.sel_targ == NaN
+            
             
             % TODO: implement rejection of express saccades & small
             % initial saccades (init could be > 5 deg)
             
             
             % time that relevant epoch of trial started
-            t_start = find(this_cfg.trialvec==tt & this_data.XDAT==resp_epoch ,1,'first')/this_cfg.hz; %CHECK
-            
-            % first, count saccades on this trial in relevant epoch (4)
-            s_all.n_sacc(thisidx(tt)) = sum(which_trials==tt);
-            
-            % then, count saccades within each epoch on this trial
-            % (1-5)
+            t_start = find(this_cfg.trialvec==tt & this_data.XDAT==RESP_EPOCH ,1,'first')/this_cfg.hz; %CHECK
             
             
-            this_i_sacc = which_sacc(find(which_trials==tt,1,'first'));
-            if ~isempty(this_i_sacc)
-                s_all.i_sacc_raw(thisidx(tt),:) = [this_sacc.X_end(this_i_sacc) this_sacc.Y_end(this_i_sacc)];
-                s_all.i_sacc_rt(thisidx(tt)) = this_sacc.t(this_i_sacc,1)-t_start;
-                s_all.i_sacc_trace{thisidx(tt)} = [this_sacc.X_trace{this_i_sacc} this_sacc.Y_trace{this_i_sacc}];
+            %this_i_sacc = which_sacc(find(which_trials==tt,1,'first'));
+            this_i_sacc = which_sacc(which_trials==tt);
+            
+            
+            % compute amplitude of each of these
+            this_i_amp = this_sacc.amplitude(this_i_sacc);
+            this_i_dur = this_sacc.duration(this_i_sacc);
+
+            
+            % if amplitude too small or duration too short (for ALL
+            % saccades in response epoch
+            
+            % first, if no saccade detected (if i_sacc is empty),
+            % record as "20" - no identified saccades (whatosever!)
+            if isempty(this_i_sacc)
+                s_all.excl_trial{thisidx(tt)}(end+1) = 20; % no saccades identified in response epoch
+            elseif ~any(this_i_dur<=excl_criteria.i_dur_thresh & this_i_amp>=excl_criteria.i_amp_thresh)  % if none of the saccades pass the amplitude & duration criteria
+                s_all.excl_trial{thisidx(tt)}(end+1) = 21; % none of the identified saccades (>0) passed exclusion criteria for primary saccade
+            else
+                % ok, now we can use the first of the saccades that do
+                % pass exclusion criteria as the 'primary' saccade
+                
+                % find the first of this_i_sacc for which amp & dur
+                % pass threshold
+                this_i_sacc = this_i_sacc(this_i_amp>=excl_criteria.i_amp_thresh & this_i_dur <= excl_criteria.i_dur_thresh);
+                
+                % just index into the first element of this_i_sacc...
+                s_all.i_sacc_raw(thisidx(tt),:) = [this_sacc.X_end(this_i_sacc(1)) this_sacc.Y_end(this_i_sacc(1))];
+                s_all.i_sacc_rt(thisidx(tt)) = this_sacc.t(this_i_sacc(1),1)-t_start;
+                s_all.i_sacc_trace{thisidx(tt)} = [this_sacc.X_trace{this_i_sacc(1)} this_sacc.Y_trace{this_i_sacc(1)}];
+                
             end
+            
+            
+            clear this_i_amp this_i_dur;
+            
             
             % within relevant epoch, find first sacc, compute
             % - RT
@@ -195,6 +223,26 @@ for ss = 1:length(subj)
                 s_all.f_sacc_rt(thisidx(tt)) = this_sacc.t(this_f_sacc,1)-t_start;
                 s_all.f_sacc_trace{thisidx(tt)} = [this_sacc.X_trace{this_f_sacc} this_sacc.Y_trace{this_f_sacc}];
             end
+
+            
+            % first saccade: primary
+            
+            % last saccade: final
+            
+            % so, I think we just need the length of i_sacc:f_sacc
+            if ~isempty(this_i_sacc) && ~isempty(this_f_sacc)
+                % in most cases, we'll identify both i_sacc & f_sacc -
+                % use this algo
+                s_all.n_sacc(thisidx(tt)) = length(this_i_sacc:this_f_sacc);
+            else
+                % if either of them is undefined (or both), this will
+                % give us the # of saccades: 1 if only i_sacc or only
+                % f_sacc, 0 if neither
+                s_all.n_sacc(thisidx(tt)) = sum([~isempty(this_i_sacc) ~isempty(this_f_sacc)]);
+            end
+
+                      
+            
             
             % store calibration, drift correction
             s_all.drift(thisidx(tt),:) = this_cfg.drift.amt(tt,:);
@@ -217,10 +265,10 @@ for ss = 1:length(subj)
             % DURING DELAY, FIXATION OUTSIDE OF RANGE
             
             % find fixations in this trial; epoch
-            this_fix_idx = this_cfg.trialvec==tt & this_data.XDAT==delay_epoch;
-            if max(sqrt(this_data.X_fix(this_fix_idx).^2+this_data.Y_fix(this_fix_idx).^2)) > excl_criteria.delay_fix_thresh || ...
-                sum(sqrt(this_data.X(this_fix_idx).^2+this_data.Y(this_fix_idx).^2) > excl_criteria.delay_fix_thresh)*(1/this_cfg.hz) > excl_criteria.delay_raw_dur_thresh
-            
+            this_fix_idx = this_cfg.trialvec==tt & ismember(this_data.XDAT,FIX_EPOCH);
+            %if max(sqrt(this_data.X_fix(this_fix_idx).^2+this_data.Y_fix(this_fix_idx).^2)) > excl_criteria.delay_fix_thresh || ...
+            %    sum(sqrt(this_data.X(this_fix_idx).^2+this_data.Y(this_fix_idx).^2) > excl_criteria.delay_fix_thresh)*(1/this_cfg.hz) > excl_criteria.delay_raw_dur_thresh
+            if max(sqrt(this_data.X_fix(this_fix_idx).^2+this_data.Y_fix(this_fix_idx).^2)) > excl_criteria.delay_fix_thresh
                 s_all.excl_trial{thisidx(tt)}(end+1) = 13;
             end
             
@@ -237,10 +285,11 @@ for ss = 1:length(subj)
             else
                 
                 % if either duration too long or amplitude too small
-                if 1000*this_sacc.duration(this_i_sacc)  > excl_criteria.i_dur_thresh || ...
-                        this_sacc.amplitude(this_i_sacc) < excl_criteria.i_amp_thresh
-                    s_all.excl_trial{thisidx(tt)}(end+1) = 21;
-                end
+                % NOTE: deprecated now? i_sacc *must* be correct amp/dur
+%                 if 1000*this_sacc.duration(this_i_sacc)  > excl_criteria.i_dur_thresh || ...
+%                         this_sacc.amplitude(this_i_sacc) < excl_criteria.i_amp_thresh
+%                     s_all.excl_trial{thisidx(tt)}(end+1) = 21;
+%                 end
                 
                 % if error greater than i_err_thresh
                 if sqrt(sum((s_all.i_sacc_raw(thisidx(tt),:)-this_coord).^2,2)) > ...
