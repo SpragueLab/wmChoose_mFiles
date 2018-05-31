@@ -4,7 +4,7 @@ root = '/Volumes/data/wmChoose';
 ifg_fn = '/Volumes/tommy/Documents/MATLAB/toolboxes_dev/iEye_ts/examples/p_1000hz.ifg';
 
 %subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag'}; %aa1
-subj = {'af'};
+subj = {'ah'};
 
 runs_with_err = {};
 errs = {};

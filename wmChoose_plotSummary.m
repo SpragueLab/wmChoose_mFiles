@@ -102,7 +102,7 @@ for ss = 1:length(subj)
         subplot(NROWS_2D,NCOLS_2D,(thisrow-1)*NCOLS_2D+thiscol); hold on;
         
         % if trial is excluded (per our chosen criteria!), mark with red ring; otherwise, black
-        if ismember(this_data.s_all.excl_trial{ii},WHICH_EXCL)
+        if any(ismember(this_data.s_all.excl_trial{ii},WHICH_EXCL))
             plot(15*cos(linspace(2*pi/180,2*pi,180)), 15*sin(linspace(2*pi/180,2*pi,180)),'-','Color',EXCL_COLOR);
         else
             plot(15*cos(linspace(2*pi/180,2*pi,180)), 15*sin(linspace(2*pi/180,2*pi,180)),'-','Color',[0 0 0]);
@@ -118,7 +118,7 @@ for ss = 1:length(subj)
             
             % and if the trial were excluded for a saccade-related reason,
             % mark it w/ red i_sacc trace
-            if ismember(this_data.s_all.excl_trial{ii},[21 22])
+            if any(ismember(this_data.s_all.excl_trial{ii},[21 22]))
                 plot(this_data.s_all.i_sacc_trace{ii}(:,1),this_data.s_all.i_sacc_trace{ii}(:,2),'-','LineWidth',1.5,'Color',EXCL_COLOR);
                 % otherwise, black
             else
@@ -138,9 +138,9 @@ for ss = 1:length(subj)
         
         % mark fix red if no primary saccade detected or fixation break
         % during delay
-        if ismember(this_data.s_all.excl_trial{ii},[13 20])
+        if any(ismember(this_data.s_all.excl_trial{ii},[13 20]))
             fixcolor = EXCL_COLOR;
-            if ismember(this_data.s_all.excl_trial{ii},20)
+            if any(ismember(this_data.s_all.excl_trial{ii},20))
                 fixmarker = 'x';
             end
         else
@@ -152,10 +152,10 @@ for ss = 1:length(subj)
         % add a marker for preproc-related reasons for dropping a trial
         % (failed calibration/drift correction according to thresholds)
         exclstr = '';
-        if ismember(this_data.s_all.excl_trial{ii},11)
+        if any(ismember(this_data.s_all.excl_trial{ii},11))
             exclstr(end+1) = 'd';
         end
-        if ismember(this_data.s_all.excl_trial{ii},12)
+        if any(ismember(this_data.s_all.excl_trial{ii},12))
             exclstr(end+1) = 'c';
         end
         if ~isempty(exclstr)
@@ -182,46 +182,7 @@ for ss = 1:length(subj)
     end
     clear figs_2d;
     
-    % 1d plot of each trial, pre-go-cue, colored accoridng to whether trial
-    % excluded
-    
-    %     figure; set(gcf,'Position',FIG_POS_1D);fig_cnt = 1;
-    %     for ii = 1:size(this_data.c_all,1)
-    %         thisrow = this_data.t_all(ii);
-    %         thiscol = this_data.r_all(ii);
-    %
-    %         thiscol = mod(thiscol,NCOLS_1D);
-    %         if thiscol==0
-    %             thiscol = NCOLS_1D;
-    %         end
-    %
-    %         subplot(NROWS_1D,NCOLS_1D,(thisrow-1)*NCOLS_1D+thiscol); hold on;
-    %
-    %         preresp_idx = ismember(this_data.s_all.XDAT{ii},[1 2]);
-    %
-    %         plot(0.001*(1:sum(preresp_idx)).',zeros(sum(preresp_idx),1),'k--');
-    %
-    %         if isempty(this_data.s_all.excl_trial{ii})
-    %             % draw solid
-    %             plot(0.001*(1:sum(preresp_idx)).',this_data.s_all.X{ii}(preresp_idx),'-','LineWidth',1.5,'Color',RAW_COLORS(1,:));
-    %             plot(0.001*(1:sum(preresp_idx)).',this_data.s_all.Y{ii}(preresp_idx),'-','LineWidth',1.5,'Color',RAW_COLORS(2,:));
-    %         else
-    %             % draw dashed?
-    %             plot(0.001*(1:sum(preresp_idx)).',this_data.s_all.X{ii}(preresp_idx),':','LineWidth',1.5,'Color',RAW_COLORS(1,:));
-    %             plot(0.001*(1:sum(preresp_idx)).',this_data.s_all.Y{ii}(preresp_idx),':','LineWidth',1.5,'Color',RAW_COLORS(2,:));
-    %         end
-    %
-    %         ylim([-3 3]); xlim([0 4]);
-    %         axis off;
-    %
-    %         % if we're on the last row, col and not last trial, open a new fig
-    %         if thisrow==NROWS_1D && thiscol==NCOLS_1D && ii~=size(this_data.c_all,1)
-    %             figure;set(gcf,'Position',FIG_POS_1D)
-    %         end
-    %
-    %         clear preresp_idx thisrow thiscol;
-    %     end
-    
+
     
     % let's also try it the imagesc way...
     figs_1d(1) = figure;set(gcf,'Position',FIG_POS_1D);
@@ -248,10 +209,10 @@ for ss = 1:length(subj)
         
         imagesc(0.001*(1:sum(preresp_idx)),this_data.t_all(ii),sqrt( this_data.s_all.X{ii}(preresp_idx).^2 + this_data.s_all.Y{ii}(preresp_idx).^2 ).');
         
-        if ~isempty(this_data.s_all.excl_trial{ii}) % if we do exclude
+        if any(ismember(this_data.s_all.excl_trial{ii},WHICH_EXCL)) % if we do exclude
             % draw an x to the right of the trial
             plot(4.25,this_data.t_all(ii),'x','LineWidth',1.5,'Color',EXCL_COLOR)
-            if ismember(this_data.s_all.excl_trial{ii},13)
+            if any(ismember(this_data.s_all.excl_trial{ii},13))
                 % if delay out-of-bounds, add a circle
                 plot(4.25,this_data.t_all(ii),'o','LineWidth',1.5,'Color',EXCL_COLOR)
             end
@@ -275,7 +236,7 @@ for ss = 1:length(subj)
     plot(0,0,'ks','MarkerSize',8,'MarkerFaceColor','k');
     
     for ii = 1:size(this_data.c_all,1)
-        if ismember(this_data.s_all.excl_trial{ii},WHICH_EXCL)
+        if any(ismember(this_data.s_all.excl_trial{ii},WHICH_EXCL))
             thiscolor = EXCL_COLOR; subplot(4,2,subplot_group{2});
         else
             thiscolor = [0.2 0.2 0.2]; subplot(4,2,subplot_group{1});
@@ -309,7 +270,7 @@ for ss = 1:length(subj)
             
         end
         
-        if ismember(this_data.s_all.excl_trial{ii},WHICH_EXCL)
+        if any(ismember(this_data.s_all.excl_trial{ii},WHICH_EXCL))
             subplot(4,2,8); hold on;
         else
             subplot(4,2,7); hold on;
