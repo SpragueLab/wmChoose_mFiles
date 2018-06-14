@@ -20,8 +20,8 @@
 root_behav  = '/Volumes/data/wmChoose/data';%CC_MGSMap25mm_MB4_behav'; %HACK
 root_target = '/Volumes/data/wmChoose/data'; % where to save things
 
-%subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag','ah','ai'};
-subj = {'ah','ai'};
+subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag','ah','ai'};
+%subj = {'ah','ai'};
 %sess = {{'MGSMap2'}};%,{'Map1','Map2'},{'Map1','Map2'},{'Map1','Map2'}}; % need to turn this into KDm1, KDm2 for behavioral data extraction
 
 %n_subRuns = 2; % could do this automagically...
@@ -70,11 +70,6 @@ for ss = 1:length(subj)
         c_all = [];   % conditions/trial labels
         p_all.radMean = []; % stimulus parameters
         p_all.polarAngleOffset = [];
-        s_all.i_sacc = []; % saccade data (initial, final, RT)
-        s_all.f_sacc = [];
-        s_all.i_sacc_err = [];
-        s_all.f_sacc_err = [];
-        s_all.srt = [];
         r_all = [];  % run #
         t_all = []; % trial #
         
@@ -130,11 +125,6 @@ for ss = 1:length(subj)
 %                 
 %                 clear sdata thissrt thistrials;
 %             %else
-                s_all.i_sacc = [s_all.i_sacc;nan(bdata.p.ntrials,2)];
-                s_all.f_sacc = [s_all.f_sacc;nan(bdata.p.ntrials,2)];
-                s_all.i_sacc_err = [s_all.i_sacc_err;nan(bdata.p.ntrials,1)];
-                s_all.f_sacc_err = [s_all.f_sacc_err;nan(bdata.p.ntrials,1)];
-                s_all.srt = [s_all.srt;nan(bdata.p.ntrials,1)];
             %end
             
             
@@ -157,7 +147,7 @@ for ss = 1:length(subj)
         % save everything
         fn2s = sprintf('%s/%s_wmChoose_behav.mat',root_target,subj{ss});
         fprintf('saving to %s...\n',fn2s);
-        save(fn2s,'c_all','p_all','r_all','s_all','t_all','coords_all','colors_all');
+        save(fn2s,'c_all','p_all','r_all','t_all','coords_all','colors_all');
         
         % clear those things..
     %end

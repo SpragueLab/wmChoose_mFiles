@@ -26,8 +26,14 @@ startidx = 1;
 
 for ss = 1:length(subj)
     fn = sprintf('%s/data/%s_wmChoose_behav.mat',root,subj{ss});
-    fprintf('Loading %s\n',fn);
+    fprintf('Loading trial information from %s\n',fn);
     this_data = load(fn);
+    
+    fn = sprintf('%s/data/%s_wmChoose_scored.mat',root,subj{ss});
+    fprintf('Loading scored eye data from %s\n',fn);
+    this_scored = load(fn);
+    
+    this_data.s_all = this_scored.ii_sess;
     
     this_subj = find(strcmpi(u_subj,subj{ss}(1:2)));
     

@@ -8,8 +8,8 @@ close all;
 root = '/Volumes/data/wmChoose';
 ifg_fn = '~/Documents/MATLAB/toolboxes_dev/iEye_ts/examples/p_1000hz.ifg';
 
-subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag','ai'}; %aa1
-%subj = {'ah'};
+%subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag','ai'}; %aa1
+subj = {'af','ag','ai'};
 
 runs_with_err = {};
 errs = {};
