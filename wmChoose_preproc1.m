@@ -125,8 +125,10 @@ end
 %[ii_data,ii_cfg] = ii_calibratebytrial(ii_data,ii_cfg,{'X','Y'},targ_coords,'scale',[0.75 4/3]);
 % NOTE: differs from ii_preproc! uses targ_coords, from above, instead of
 % TarX, TarY
-[ii_data,ii_cfg] = ii_calibratebytrial(ii_data,ii_cfg,{'X','Y'},...
-   targ_coords,ii_params.calibrate_mode, ii_params.calibrate_limits);
+%[ii_data,ii_cfg] = ii_calibratebytrial(ii_data,ii_cfg,{'X','Y'},...
+%   targ_coords,ii_params.calibrate_mode, ii_params.calibrate_limits);
+
+[ii_data,ii_cfg] = ii_calibratebyrun(ii_data,ii_cfg,{'X','Y'},targ_coords,3,ii_params.calibrate_limits);
 
 
 % plot all these - make sure they're good

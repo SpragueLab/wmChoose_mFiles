@@ -8,8 +8,8 @@ close all;
 root = '/Volumes/data/wmChoose';
 ifg_fn = '~/Documents/MATLAB/toolboxes_dev/iEye_ts/examples/p_1000hz.ifg';
 
-%subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag','ai'}; %aa1
-subj = {'af','ag','ai'};
+%subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag','ah','ai'}; %aa1
+subj = {'ag','ah','ai'};
 
 runs_with_err = {};
 errs = {};
@@ -25,6 +25,7 @@ ii_params = ii_loadparams;
 ii_params.trial_end_value = 5;
 ii_params.drift_epoch = [1 2];
 ii_params.calibrate_epoch = 4;
+ii_params.calibrate_mode = 'run';
 ii_params.calibrate_select_mode = 'last';
 ii_params.calibrate_window = 300; % originally was 300
 ii_params.blink_window = [200 200];

@@ -126,21 +126,7 @@ for ss = 1:length(u_subj)
         
         subplot(length(cu),length(u_subj),(cc-1)*length(u_subj)+ss); hold on;
         
-        thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==1;
-
-        histogram(all_data.s_all.i_sacc_rt(thisidx),45,'BinLimits',[0 1.5],'FaceColor',cond_colors(cc,:));
         
-        if ss == 1
-            ylabel(cond_str{cc});
-        end
-        
-        if cc == 1
-            title(u_subj{ss});
-        end
-        
-        if cc == length(cu)
-            xlabel('RT (s)');
-        end
         
     end
 end
