@@ -1,10 +1,10 @@
 
 close all;
-root = '/Volumes/data/wmChoose';
-ifg_fn = '/Volumes/tommy/Documents/MATLAB/toolboxes_dev/iEye_ts/examples/p_1000hz.ifg';
 
-%subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag'}; %aa1
-subj = {'ah'};
+root = 'Z:/projects/wmChoose';
+ifg_fn = 'C:/Users/li/Documents/MATLAB/iEye_ts/examples/p_1000hz.ifg';
+
+subj = {'sub002'};
 
 runs_with_err = {};
 errs = {};
@@ -20,9 +20,9 @@ ii_params.calibrate_select_mode = 'last';
 ii_params.calibrate_window = 300;
 ii_params.blink_window = [200 200];
 ii_params.plot_epoch = [3 4];
-ii_params.calibrate_limits = [0.75 1.333]; % original ecc b/w 9 and 16...
+ii_params.calibrate_limits = [1.5]; % original ecc b/w 9 and 16...
 
-ii_params.ppd = 34.1445; % behavioral room screen
+%ii_params.ppd = 34.1445; % behavioral room screen
 
 
 for ss = 1:length(subj)
@@ -50,6 +50,8 @@ for ss = 1:length(subj)
         % for convenience...
         thisbehav = thisbehav.p;
         
+        ii_params.ppd = thisbehav.ppd;
+        
         % custom for each expt
         block_num = str2double(matf(strfind(matf,'_r')+[2 3]));
         
@@ -60,15 +62,10 @@ for ss = 1:length(subj)
             coords{tt} = {thisbehav.targ_coords{1}(tt,:), thisbehav.targ_coords{2}(tt,:)};
         end
         
-        
         % set up trialinfo
         trial_info = horzcat(thisbehav.conditions,thisbehav.targ_coords{:});
-
-        if block_num == 7
-        end
         
         preproc_fn = sprintf('%s/preproc_iEye/%s_%s_r%02.f_preproc.mat',root,subj{ss},fn_prefix,block_num);
-        
        
         wmChoose_preproc1(this_edf,ifg_fn,preproc_fn,coords,trial_info,ii_params);
         
