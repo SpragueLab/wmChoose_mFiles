@@ -17,10 +17,10 @@
 %        2) remembered angle 1 (cued, for R1/R2-cue)
 %        3) remembered angle 2 (uncued for R1/R2-cue)
 
-root_behav  = '/Volumes/data/wmChoose/data';%CC_MGSMap25mm_MB4_behav'; %HACK
-root_target = '/Volumes/data/wmChoose/data'; % where to save things
+root_behav  = 'Z:/projects/wmChoose/data';%CC_MGSMap25mm_MB4_behav'; %HACK
+root_target = 'Z:/projects/wmChoose/data'; % where to save things
 
-subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag','ah','ai'};
+subj = {'sub001','sub002','sub003'};
 %subj = {'ah','ai'};
 %sess = {{'MGSMap2'}};%,{'Map1','Map2'},{'Map1','Map2'},{'Map1','Map2'}}; % need to turn this into KDm1, KDm2 for behavioral data extraction
 

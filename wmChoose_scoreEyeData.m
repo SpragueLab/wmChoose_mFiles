@@ -5,11 +5,11 @@
 %   wmChoose_plotSummary.m
 
 close all;
-root = '/Volumes/data/wmChoose';
-ifg_fn = '~/Documents/MATLAB/toolboxes_dev/iEye_ts/examples/p_1000hz.ifg';
+root = 'Z:/projects/wmChoose';
+ifg_fn = 'Y:/li/projects/iEye_ts/examples/p_1000hz.ifg';
 
 %subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag','ah','ai'}; %aa1
-subj = {'ag','ah','ai'};
+subj = {'sub001','sub002','sub003'};
 
 runs_with_err = {};
 errs = {};
@@ -32,7 +32,7 @@ ii_params.blink_window = [200 200];
 ii_params.plot_epoch = [3 4];
 ii_params.calibrate_limits = [2.5]; % error during feedback shouldn't exceed this
 
-ii_params.ppd = 34.1445; % behavioral room screen
+%ii_params.ppd = 34.1445; % behavioral room screen
 
 
 for ss = 1:length(subj)
@@ -60,7 +60,7 @@ for ss = 1:length(subj)
 
         % for convenience...
         thisbehav = thisbehav.p;
-        
+        ii_params.ppd = thisbehav.ppd;
         % custom for each expt
         block_num(ff) = str2double(matf(strfind(matf,'_r')+[2 3]));
         

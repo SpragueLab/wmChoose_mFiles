@@ -12,9 +12,9 @@
 % 21: bad primary saccade (too small/short)
 % 22: large error for primary saccade
 
-root = '/Volumes/data/wmChoose/';
+root = 'Z:/projects/wmChoose';
 
-subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag','ah','ai'};
+subj = {'sub001','sub002','sub003'};
 
 %WHICH_EXCL = [11 13 20 21 22]; % don't exclude trials w/ calibration failures for now...
 WHICH_EXCL = [13 20 21]; % don't exclude trials w/ calibration failures for now...
