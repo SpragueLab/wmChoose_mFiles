@@ -21,7 +21,8 @@ WHICH_EXCL = [13 20 21]; % don't exclude trials w/ calibration failures for now.
 
 % for now, let's use cat_struct to load/concatenate all data...
 all_subj = nan(1000*length(subj),1);
-u_subj = unique(cellfun(@(s) s(1:2),subj,'uniformoutput',0));
+%u_subj = unique(cellfun(@(s) s(1:2),subj,'uniformoutput',0));
+u_subj = subj;
 
 TARG_ECC = 12;
 
@@ -42,7 +43,7 @@ for ss = 1:length(subj)
     
     this_data.s_all = this_scored.ii_sess;
     
-    this_subj = find(strcmpi(u_subj,subj{ss}(1:2)));
+    this_subj = ss; %find(strcmpi(u_subj,subj{ss}(1:2)));
     
     all_data = cat_struct(all_data,this_data);
     all_subj(startidx:(startidx-1+size(this_data.c_all,1))) = this_subj;
