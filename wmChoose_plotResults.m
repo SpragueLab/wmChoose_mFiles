@@ -14,7 +14,7 @@
 
 root = 'Z:/projects/wmChoose';
 
-subj = {'sub001','sub002','sub003'};
+subj = {'sub001','sub002','sub003','sub004','sub005','sub006','sub007','sub008','sub009','sub010','sub011','sub012','sub013','sub014','sub016'};
 
 %WHICH_EXCL = [11 13 20 21 22]; % don't exclude trials w/ calibration failures for now...
 WHICH_EXCL = [13 20 21]; % don't exclude trials w/ calibration failures for now...

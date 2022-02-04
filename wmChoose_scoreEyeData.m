@@ -6,10 +6,13 @@
 
 close all;
 root = 'Z:/projects/wmChoose';
-ifg_fn = 'Y:/li/projects/iEye_ts/examples/p_1000hz.ifg';
+% ifg_fn = 'Y:/li/projects/iEye_ts/examples/p_1000hz.ifg';
+
+ifg_fn = 'Y:\li\projects\old\iEye_ts\examples\p_1000hz.ifg';
+
 
 %subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag','ah','ai'}; %aa1
-subj = {'sub001','sub002','sub003'};
+subj = {'sub004','sub009'};
 
 runs_with_err = {};
 errs = {};
