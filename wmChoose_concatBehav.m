@@ -20,7 +20,7 @@
 root_behav  = 'Z:/projects/wmChoose/data';%CC_MGSMap25mm_MB4_behav'; %HACK
 root_target = 'Z:/projects/wmChoose/data'; % where to save things
 
-subj = {'sub004','sub009'};
+subj = {'sub001','sub002','sub003','sub004','sub005','sub006','sub007','sub008','sub009','sub010','sub011','sub012','sub013','sub014','sub016','sub017','sub018','sub019','sub020','sub021'};
 %subj = {'ah','ai'};
 %sess = {{'MGSMap2'}};%,{'Map1','Map2'},{'Map1','Map2'},{'Map1','Map2'}}; % need to turn this into KDm1, KDm2 for behavioral data extraction
 

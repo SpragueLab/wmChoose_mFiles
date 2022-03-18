@@ -1,9 +1,9 @@
-% wmChoose_plotResults.m
+% wmPri_plotEyeData.mm
 %
-% general plotting script for wmChoose - plots sacc metrics as a function
-% of condition (R1, R2-cued, R2-choose)
+% general plotting script for wmPri - plots sacc metrics as a function
+% of condition (high, low priority)
 %
-% TCS 4/13/2018
+% TCS 8/17/2018
 
 % 11: drift correction
 % 12: calibration (note: for run-wise, we're not using this at all..
@@ -12,24 +12,33 @@
 % 21: bad primary saccade (too small/short)
 % 22: large error for primary saccade
 
-root = 'Z:/projects/wmChoose';
+root = wmPri_loadRoot;
 
-subj = {'sub001','sub002','sub003','sub004','sub005','sub006','sub007','sub008','sub009','sub010','sub011','sub012','sub013','sub014','sub016','sub017','sub018','sub019','sub020','sub021'};
+subj = {'AY','CC','KD','MR','SF','SH','XL','JK','YK','MH','SM'};
+sess = {{'wmPri1','wmPri2'},{'wmPri1','wmPri2'},{'wmPri1','wmPri2'},{'wmPri1','wmPri2'},{'wmPri1','wmPri2'},{'wmPri1','wmPri2'},{'wmPri1','wmPri2','wmPri3'},{'wmPri1','wmPri2'},{'wmPri1','wmPri2'},{'wmPri1','wmPri2'},{'wmPri1','wmPri2'}};
+%subj = {'JK','MH','SM','YK'};
+%subj = {'JK','SM','YK'}; %JK, SM, YK are anti-prioritizers, along w/ MR
+%sess = {{'wmPri1','wmPri2'},{'wmPri1','wmPri2'},{'wmPri1','wmPri2'},{'wmPri1','wmPri2'}};
 
 %WHICH_EXCL = [11 13 20 21 22]; % don't exclude trials w/ calibration failures for now...
-WHICH_EXCL = [13 20 21]; % don't exclude trials w/ calibration failures for now...
+WHICH_EXCL = [20 21 22]; % don't exclude trials w/ calibration failures for now...
+
+%incl_subj = [1 1 1 0 1 1 1 1 1 1 1]; % whether or not to include a subj for averaging...
+incl_subj = [1 1 1 1 1 1 1 1 1 1 1]; % whether or not to include a subj for averaging...
+%incl_subj = [1 1 1];
+
+subj_colors = [0 0 0; 0.7 0.7 0.7]; % colors for included (1) or non-included (2) subj
+
 
 % for now, let's use cat_struct to load/concatenate all data...
 all_subj = nan(1000*length(subj),1);
-%u_subj = unique(cellfun(@(s) s(1:2),subj,'uniformoutput',0));
-u_subj = subj;
+u_subj = unique(cellfun(@(s) s(1:2),subj,'uniformoutput',0));
 
 TARG_ECC = 12;
 
 niter = 1000;
 
-
-ET_HZ = 1000;
+ET_HZ = 500;
 ET_MS = 1000/ET_HZ; % sampling rate for plotting timeseries
 
 all_data = [];
@@ -37,24 +46,27 @@ all_data = [];
 startidx = 1;
 
 for ss = 1:length(subj)
-    fn = sprintf('%s/data/%s_wmChoose_behav.mat',root,subj{ss});
-    fprintf('Loading trial information from %s\n',fn);
-    this_data = load(fn);
+    for sessidx = 1:length(sess{ss})
+%     fn = sprintf('%s/data/%s_wmPri_scored.mat',root,subj{ss});
+%     fprintf('Loading trial information from %s\n',fn);
+%     this_data = load(fn);
     
-    fn = sprintf('%s/data/%s_wmChoose_scored.mat',root,subj{ss});
+    fn = sprintf('%s/wmPri_behav/%s_%s_scored.mat',root,subj{ss},sess{ss}{sessidx});
     fprintf('Loading scored eye data from %s\n',fn);
     this_scored = load(fn);
     
     this_data.s_all = this_scored.ii_sess;
+    this_data.sess_all = sessidx;
     
-    this_subj = ss; %find(strcmpi(u_subj,subj{ss}(1:2)));
+    this_subj = ss;%find(strcmpi(u_subj,subj{ss}(1:2)));
     
     all_data = cat_struct(all_data,this_data);
-    all_subj(startidx:(startidx-1+size(this_data.c_all,1))) = this_subj;
+    all_subj(startidx:(startidx-1+size(this_scored.ii_sess.trialinfo,1))) = this_subj;
     
-    startidx = startidx+size(this_data.c_all,1);
+    startidx = startidx+size(this_scored.ii_sess.trialinfo,1);
     
     clear this_subj this_data;
+    end
 end
 
 % let's try this pattern for now
@@ -67,21 +79,25 @@ all_data.subj_all = all_subj;
 all_data.use_trial = ~cellfun( @any, cellfun( @(a) ismember(a, WHICH_EXCL), all_data.s_all.excl_trial, 'UniformOutput',false));
 
 % drop trials with very short (< 100 ms) or very long RT (> 1 s)
-all_data.use_trial(all_data.s_all.i_sacc_rt<0.1 | all_data.s_all.i_sacc_rt>1.5) = 0;
+all_data.use_trial(all_data.s_all.i_sacc_rt<0.1 | all_data.s_all.i_sacc_rt>1.0) = 0;
+%all_data.use_trial(all_data.s_all.i_sacc_err>5) = 0; % kill 'bad' trials (errors)
 
 %% first, plot mean i_sacc, f_sacc error as a function of condition
 
 mean_fig = figure;
 scatter_fig = figure;
 
-to_plot = {'i_sacc_err','f_sacc_err','i_sacc_rt'};
-cu = unique(all_data.c_all(:,1));
+%to_plot = {'i_sacc_err','f_sacc_err','i_sacc_rt'};
+to_plot = {'f_sacc_err','i_sacc_rt'};
 
-cond_str = {'R1','R2-cue','R2-choose'};
+cu = unique(all_data.s_all.trialinfo(:,1));
 
-cond_colors = lines(length(cu));
+cond_str = {'High','Low'};
 
-cond_pairs = [1 2; 2 3; 1 3]; % x, y axes of scatterplot
+tmp_colors = lines(7);
+cond_colors = tmp_colors([1 4],:);%lines(length(cu));
+cond_pairs = [1 2];
+%cond_pairs = [1 2; 2 3; 1 3]; % x, y axes of scatterplot
 
 
 for pp = 1:length(to_plot)
@@ -91,7 +107,7 @@ for pp = 1:length(to_plot)
     thisd = nan(length(u_subj),length(cu));
     for cc = 1:length(cu)
         for ss = 1:length(u_subj)
-            thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==1;
+            thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(cc) & all_data.use_trial==1;
             thisd(ss,cc) = mean(all_data.s_all.(to_plot{pp})(thisidx));
         end
         plot(cc+[-0.35 0.35],[1 1]*mean(thisd(:,cc)),'-','LineWidth',2.5,'Color',cond_colors(cc,:))
@@ -102,7 +118,11 @@ for pp = 1:length(to_plot)
     xlim([0.5 0.5+length(cu)]);
     title(to_plot{pp},'Interpreter','none');
     
-    figure(scatter_fig);
+end
+   
+
+figure(scatter_fig);
+for pp = 1:length(to_plot)
     for cp = 1:size(cond_pairs,1)
         subplot(size(cond_pairs,1),length(to_plot),pp+(cp-1)*length(to_plot)); hold on;
         plot(thisd(:,cond_pairs(cp,1)),thisd(:,cond_pairs(cp,2)),'o','LineWidth',1.5,'MarkerSize',5,'Color',[0.5 0.5 0.5]);
@@ -124,6 +144,56 @@ for pp = 1:length(to_plot)
 end
 
 
+% do a figure w/ error bars too....
+figure;
+
+stats_params_pval = nan(length(to_plot),1);
+stats_params_tval = nan(length(to_plot),1);
+
+
+for pp = 1:length(to_plot)
+    subplot(1,length(to_plot),pp); hold on;
+    
+    thisd = nan(length(u_subj),length(cu));
+    for cc = 1:length(cu)
+        for ss = 1:length(u_subj)
+            thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(cc) & all_data.use_trial==1;
+            thisd(ss,cc) = mean(all_data.s_all.(to_plot{pp})(thisidx));
+        end
+    end
+    
+    % do stats
+    [~,stats_params_pval(pp),~,tmpstats] = ttest(thisd(incl_subj==1,1),thisd(incl_subj==1,2));
+    stats_params_tval(pp) = tmpstats.tstat; clear tmpstats;
+    
+    thisde = thisd - mean(thisd,2); % for within-subj SEM
+    
+    for cc = 1:length(cu)
+        
+        %plot(cc+[-0.35 0.35],[1 1]*mean(thisd(:,cc)),'-','LineWidth',2.5,'Color',cond_colors(cc,:))
+        %thise = std(thisd(incl_subj==1,:),[],1)/sqrt(sum(incl_subj));
+        thise = std(thisde(incl_subj==1,cc),[],1)/sqrt(sum(incl_subj));
+        thism = mean(thisd(incl_subj==1,cc),1);
+        
+        plot(cc*[1 1],[-1 1]*thise+thism,'-','LineWidth',1.5,'Color',cond_colors(cc,:));
+        plot(cc ,thism,'o','LineWidth',1.5,'Color',cond_colors(cc,:),'MarkerFaceColor','w','MarkerSize',10);
+        clear thise thism;
+    end
+    for ss = 1:length(subj)
+        if incl_subj(ss)==1
+            plot(1:length(cu),thisd(ss,:).','-','Color',subj_colors(1,:));
+        else
+            plot(1:length(cu),thisd(ss,:).','-','Color',subj_colors(2,:));
+        end
+    end
+    
+    set(gca,'XTick',1:length(cu),'TickDir','out','XTickLabel',cond_str,'FontSize',14,'XTickLabelRotation',-45);
+    xlim([0.5 0.5+length(cu)]);
+    title(to_plot{pp},'Interpreter','none');
+    
+end
+
+
 %% plot RT distribution for each subj, condition
 figure;
 for ss = 1:length(u_subj)
@@ -131,9 +201,9 @@ for ss = 1:length(u_subj)
         
         subplot(length(cu),length(u_subj),(cc-1)*length(u_subj)+ss); hold on;
         
-        thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==1;
+        thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(cc) & all_data.use_trial==1;
 
-        histogram(all_data.s_all.i_sacc_rt(thisidx),45,'BinLimits',[0 1.5],'FaceColor',cond_colors(cc,:));
+        histogram(all_data.s_all.i_sacc_rt(thisidx),15,'BinLimits',[0 1.5],'FaceColor',cond_colors(cc,:));
         
         if ss == 1
             ylabel(cond_str{cc});
@@ -164,7 +234,7 @@ for pp = 1:length(to_plot_2d)
             
             subplot(length(cu),length(u_subj),ss+(cc-1)*length(u_subj)); hold on;
             
-            thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==1;
+            thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(cc) & all_data.use_trial==1;
             %plot(all_data.s_all.(to_plot_2d{pp})(thisidx,1),all_data.s_all.(to_plot_2d{pp})(thisidx,2),'.','Color',cond_colors(cc,:));
             plot(0,0,'ko','MarkerFaceColor','k','MarkerSize',6);   % TODO: replace w/ scatter, 'MarkerFaceAlpha' = 0.5
             scatter(all_data.s_all.(to_plot_2d{pp})(thisidx,1),all_data.s_all.(to_plot_2d{pp})(thisidx,2),20,cond_colors(cc,:),'filled','MarkerFaceAlpha',0.2);
@@ -192,6 +262,44 @@ for pp = 1:length(to_plot_2d)
     %match_ylim(get(gcf,'Children'));
     set(get(gcf,'Children'),'XLim',[-5 15],'YLim',[-15 15]);axis equal;
 end
+
+
+
+%% radial saccade trajectories for each subj, condition (plotted going up/down)
+
+% we care about EPOCH 5!!!
+
+plot_dir = [1 -1]; % high, low priority
+
+% compute R...
+all_data.s_all.R = cellfun(@(x,y) sqrt(x.^2+y.^2),all_data.s_all.X,all_data.s_all.Y,'UniformOutput',false);
+
+figure;
+for ss = 1:length(subj)
+    subplot(length(subj),1,ss); hold on;
+    
+    for cc = 1:length(cu)
+        thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(cc) & all_data.use_trial==1;
+        thiscolor = cond_colors(cc,:); thisepochs = 5;
+        %cellfun(@(x,d) plot((1:length(x))*ET_HZ, plot_dir(cc)*x(ismember(d,thisepochs)),'LineWidth',1,'Color',cond_colors(cc,:)),{all_data.s_all.X{thisidx}},{all_data.s_all.XDAT{thisidx}});
+        cellfun(@(x,d) plot((1:sum(ismember(d,thisepochs))).'*ET_MS,plot_dir(cc)*x(ismember(d,thisepochs)),'LineWidth',1,'Color',cond_colors(cc,:)),{all_data.s_all.R{thisidx}},{all_data.s_all.XDAT{thisidx}});
+        
+    end
+    
+    if ss == length(subj)
+        set(gca,'XTick',[0:500:2000],'TickDir','out');
+        xlabel('Time (ms)');
+    else
+        set(gca,'XTick',[0:500:2000],'TickDir','out','XTickLabel',[]);
+    end
+    
+    ylim([-17 17]); xlim([0 1500]);
+    
+    ylabel(subj{ss});
+    set(gca,'YTick',[-12 -6 0 6 12],'YTickLabel',{'Low',[],[],[],'High'});
+    
+end
+
 
 
 
@@ -233,7 +341,7 @@ for pp = 1:length(to_plot_2d)
                 %subplot(length(cu),length(u_subj),ss+(cc-1)*length(u_subj)); hold on;
                 
                 
-                thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==1;
+                thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(cc) & all_data.use_trial==1;
                 
                 [thish,thise] = histcounts(all_data.s_all.(to_plot_2d{pp})(thisidx,dim_to_plot(dd)) - dim_targ(dd),'BinWidth',0.5,'Normalization','pdf');
                 plot(mean([thise(1:end-1);thise(2:end)],1),thish,'-','LineWidth',1,'Color',cond_colors(cc,:));
@@ -273,39 +381,78 @@ set(get(gcf,'Children')','YTickLabel',[]);
 %
 % then, automatically plot and do stats on that dimension below
 
+fig_std_sum = nan(length(dim_to_plot),1);
+
+% cell: dimension (radial, tangential)
+% value: saccade parameter (i_sacc, f_sacc)
+stats_dim_tval{1} = nan(length(to_plot_2d),1);
+stats_dim_tval{2} = nan(length(to_plot_2d),1);
+
+stats_dim_pval{1} = nan(length(to_plot_2d),1);
+stats_dim_pval{2} = nan(length(to_plot_2d),1);
+
+
 % now plot all the std devs
-fig_std_sum = figure;
-for pp = 1:length(to_plot_2d)
-    for dd = 1:length(dim_to_plot)
+for dd = 1:length(dim_to_plot)
+    fig_std_sum(dd) = figure;
+
+    for pp = 1:length(to_plot_2d)
         
-        subplot(length(to_plot_2d),length(dim_to_plot),dd+(pp-1)*length(to_plot_2d)); hold on;
+        %subplot(length(to_plot_2d),length(dim_to_plot),dd+(pp-1)*length(to_plot_2d)); hold on;
         
-        plot(1:length(cu),squeeze(all_std(dd,pp,:,:)),'o-','Color',[0.5 0.5 0.5]);
+        subplot(1,length(to_plot_2d),pp); hold on;
+        
+        for ss = 1:length(subj)
+            if incl_subj(ss)==1
+                plot(1:length(cu),squeeze(all_std(dd,pp,:,ss)),'-','Color',subj_colors(1,:));
+            else
+                plot(1:length(cu),squeeze(all_std(dd,pp,:,ss)),'-','Color',subj_colors(2,:));
+            end
+        end
+        
+        
+        thisd = squeeze(all_std(dd,pp,:,:)).'; % subj x cond
+        thisde = thisd - mean(thisd,2);
+        
+        [~,stats_dim_pval{dd}(pp),~,tmpstats] = ttest(thisd(incl_subj==1,1),thisd(incl_subj==1,2));
+        stats_dim_tval{dd}(pp) = tmpstats.tstat; clear tmpstats;
+        
         
         for cc = 1:length(cu)
             
-            thismu = mean(squeeze(all_std(dd,pp,cc,:)));
+            thismu = mean(squeeze(all_std(dd,pp,cc,incl_subj==1)));
+            %thise  = std( squeeze(all_std(dd,pp,cc,incl_subj==1)))/sqrt(sum(incl_subj));
             
-            plot(cc+[-0.35 0.35],thismu*[1 1],'-','LineWidth',2,'Color',cond_colors(cc,:));
+            % within-subj SEM
+            thise  = std( squeeze(thisde(incl_subj==1,cc)))/sqrt(sum(incl_subj));
+            
+            
+            %plot(cc+[-0.35 0.35],thismu*[1 1],'-','LineWidth',2,'Color',cond_colors(cc,:));
+            plot(cc*[1 1],thismu+[-1 1]*thise,'-','LineWidth',1.5,'Color',cond_colors(cc,:));
+            plot(cc,thismu,'o','LineWidth',1.5,'MarkerSize',10,'MarkerFaceColor','w','Color',cond_colors(cc,:));
+            
             
             clear thismu;
         end
         
-        set(gca,'XTick',1:length(cu),'XTickLabel',cond_str,'XTickLabelRotation',-45);
-        xlim([0.35 3.65]);
+        set(gca,'XTick',1:length(cu),'XTickLabel',cond_str,'XTickLabelRotation',-45,'TickDir','out','FontSize',14);
+        xlim([0.5 length(cu)+0.5]);
         
-        if dd == 1
-            ylabel(to_plot_2d{pp},'Interpreter','none');
-        end
+        %if dd == 1
+            title(to_plot_2d{pp},'Interpreter','none');
+        %end
         
         if pp == 1
-            title(dim_str{dd});
+            ylabel('Error (std dev; \circ)');
         end
         
     end
+    match_ylim(get(fig_std_sum(dd),'Children'));
+    set(gcf,'Name',sprintf('%s - standard deviation',dim_str{dd}),'NumberTitle','off');
+
+    %sgtitle(dim_str{dd});
+    
 end
-match_ylim(get(fig_std_sum,'Children'));
-set(gcf,'Name','Standard deviation','NumberTitle','off');
 
 
 %% also do this for 'average' error (avg of rad/tang std dev)
@@ -316,28 +463,32 @@ for pp = 1:length(to_plot_2d)
         
         subplot(length(to_plot_2d),1,pp); hold on;
         
-        plot(1:length(cu),squeeze(mean(all_std(:,pp,:,:),1)),'o-','Color',[0.5 0.5 0.5]);
+        plot(1:length(cu),squeeze(mean(all_std(:,pp,:,:),1)),'o-','Color',[0.5 0.5 0.5],'MarkerFaceColor','w');
         
         for cc = 1:length(cu)
             
             thismu = mean(squeeze(mean(all_std(:,pp,cc,:),1)));
-            
-            plot(cc+[-0.35 0.35],thismu*[1 1],'-','LineWidth',2,'Color',cond_colors(cc,:));
+            thise  = std( squeeze(mean(all_std(:,pp,cc,:),1)),[],1)/sqrt(length(subj));
+            %plot(cc+[-0.35 0.35],thismu*[1 1],'-','LineWidth',2,'Color',cond_colors(cc,:));
+            plot(cc*[1 1],[-1 1]*thise+thismu,'-','LineWidth',1.5,'Color',cond_colors(cc,:));
+            plot(cc,thismu,'o','LineWidth',1.5,'Color',cond_colors(cc,:),'MarkerSize',7,'MarkerFaceColor','w');
             
             clear thismu;
         end
         
         set(gca,'XTick',1:length(cu),'XTickLabel',cond_str,'XTickLabelRotation',-45);
-        xlim([0.35 3.65]);
+        xlim([0.35 length(cu)+0.65]);
         
-        if dd == 1
-            ylabel(to_plot_2d{pp},'Interpreter','none');
-        end
+        
+        ylabel(to_plot_2d{pp},'Interpreter','none');
+        
         
         if pp == 1
             title('Average error (both dimensions)');
         end
         
+        set(gca,'XTick',1:length(cu),'TickDir','out','LineWidth',1.5,'XTickLabel',cond_str,'FontSize',14,'XTickLabelRotation',-45);
+        xlim([0.5 0.5+length(cu)]);
     
 end
 match_ylim(get(fig_std_sum_avg,'Children'));
@@ -345,14 +496,16 @@ set(gcf,'Name','Standard deviation - average','NumberTitle','off');
 
 
 
-% and all the means
+
+
+%% and all the means (bias)
 fig_mu_sum = figure;
 for pp = 1:length(to_plot_2d)
     for dd = 1:length(dim_to_plot)
         
         subplot(length(to_plot_2d),length(dim_to_plot),dd+(pp-1)*length(to_plot_2d)); hold on;
         
-        plot(1:length(cu),squeeze(all_mu(dd,pp,:,:)),'o-','Color',[0.5 0.5 0.5]);
+        plot(1:length(cu),squeeze(all_mu(dd,pp,:,:)),'o-','Color',[0.5 0.5 0.5],'MarkerFaceColor','w');
         
         for cc = 1:length(cu)
             
@@ -364,7 +517,7 @@ for pp = 1:length(to_plot_2d)
         end
         
         set(gca,'XTick',1:length(cu),'XTickLabel',cond_str,'XTickLabelRotation',-45);
-        xlim([0.35 3.65]);
+        xlim([0.35 length(cu)+0.65]);
         
         if dd == 1
             ylabel(to_plot_2d{pp},'Interpreter','none');
@@ -382,143 +535,7 @@ set(gcf,'Name','Bias','NumberTitle','off');
 % TODO: 
 % - trial exclusion % by condition (maybe broken down by exclusion type?)
 % - trace for each condition; distribution for each condition
-%% response saccade trajectories for examplar subj, condition
 
-% we care about EPOCH 3 here!!!
-
-plot_dir = [1 1 1]; % R1, R2v, R2c
-plot_v_offset = [30 15 0];
-
-% compute R...
-all_data.s_all.R = cellfun(@(x,y) sqrt(x.^2+y.^2),all_data.s_all.X,all_data.s_all.Y,'UniformOutput',false);
-
-which_subj_traj = 1; % to plot all, do which_subj_traj = subj;
-
-figure;
-for ss = 1:length(which_subj_traj)
-    subplot(length(which_subj_traj),1,ss); hold on;
-    
-    for cc = 1:length(cu)
-        thisidx = all_data.subj_all==which_subj_traj(ss) & all_data.s_all.trialinfo(:,1)==cu(cc) & all_data.use_trial==1;
-        thiscolor = cond_colors(cc,:); thisepochs = [3];
-        %cellfun(@(x,d) plot((1:length(x))*ET_HZ, plot_dir(cc)*x(ismember(d,thisepochs)),'LineWidth',1,'Color',cond_colors(cc,:)),{all_data.s_all.X{thisidx}},{all_data.s_all.XDAT{thisidx}});
-        cellfun(@(x,d) plot((1:sum(ismember(d,thisepochs))).'*ET_MS,plot_v_offset(cc)+plot_dir(cc)*x(ismember(d,thisepochs)),'LineWidth',1,'Color',cond_colors(cc,:)),{all_data.s_all.R{thisidx}},{all_data.s_all.XDAT{thisidx}});
-        
-    end
-    
-    if ss == length(which_subj_traj)
-        set(gca,'XTick',[0:500:1500],'TickDir','out');
-        xlabel('Time (ms)');
-    else
-        set(gca,'XTick',[0:500:1500],'TickDir','out','XTickLabel',[]);
-    end
-    
-    ylim([-3 45]); xlim([0 1500]);
-    
-    ylabel(subj{which_subj_traj(ss)});
-    %set(gca,'YTick',[-12 -6 0 6 12],'YTickLabel',{'Low',[],[],[],'High'});
-    set(gca,'YTick',[0 6 12 15 21 27 30 36 42],'YTickLabel',{[],'R2-choose',[],[],'R2-valid',[],[],'R1',[]});
-    % TODO: do this programmatically....
-    
-end
-
-%% Trajectory for each trial in one subject
-figure;
-for ss = 1:length(which_subj_traj)
-    subplot(length(which_subj_traj),1,ss); hold on;
-    
-    for cc = 1:length(cu)
-        thisidx = all_data.subj_all==which_subj_traj(ss) & all_data.s_all.trialinfo(:,1)==cu(cc) & all_data.use_trial==1 & all_data.r_all==1;
-        thiscolor = cond_colors(cc,:); thisepochs = [3];
-        %cellfun(@(x,d) plot((1:length(x))*ET_HZ, plot_dir(cc)*x(ismember(d,thisepochs)),'LineWidth',1,'Color',cond_colors(cc,:)),{all_data.s_all.X{thisidx}},{all_data.s_all.XDAT{thisidx}});
-        %cellfun(@(x,d) plot((1:sum(ismember(d,thisepochs))).'*ET_MS,plot_v_offset(cc)+plot_dir(cc)*x(ismember(d,thisepochs)),'LineWidth',1,'Color',cond_colors(cc,:)),{all_data.s_all.R{thisidx}},{all_data.s_all.XDAT{thisidx}});
-        thisidx2 = find(thisidx);
-
-        for ii = 1:length(thisidx2)
-            plot(all_data.s_all.X{thisidx2(ii)},all_data.s_all.Y{thisidx2(ii)},'Color',cond_colors(cc,:));
-            plot(all_data.s_all.targ(thisidx2,1),all_data.s_all.targ(thisidx2,2),'ro','MarkerFaceColor','r','MarkerSize',6);
-        end
-    end
-
-    plot(0,0,'k+','MarkerSize',8,'LineWidth',1.5);
-   
-    xlim([-15 15]);ylim([-15 15]);
-    axis square
-
-    tmpx = 12*cos(linspace(0,2*pi,1001));
-    tmpy = 12*sin(linspace(0,2*pi,1001)); 
-    plot(tmpx,tmpy,'k-','LineWidth',0.5);
-
-    set(gca,'TickDir','out','XTick',[-12 0 12],'YTick',[-12 0 12]); 
-%     if ss == length(which_subj_traj)
-%         set(gca,'XTick',[0:500:1500],'TickDir','out');
-%         xlabel('Time (ms)');
-%     else
-%         set(gca,'XTick',[0:500:1500],'TickDir','out','XTickLabel',[]);
-%     end
-%     
-%     ylim([-3 45]); xlim([0 1500]);
-%     
-%     ylabel(subj{which_subj_traj(ss)});
-%     %set(gca,'YTick',[-12 -6 0 6 12],'YTickLabel',{'Low',[],[],[],'High'});
-%     set(gca,'YTick',[0 6 12 15 21 27 30 36 42],'YTickLabel',{[],'R2-choose',[],[],'R2-valid',[],[],'R1',[]});
-%     % TODO: do this programmatically....
-    
-end
-
-%% plot error distribution for examplar subj
-figure;
- 
-for ss = 1:length(which_subj_traj)
-    
-    
-    for cc = 1:length(cu)
-        thisidx = all_data.subj_all==which_subj_traj(ss) & all_data.s_all.trialinfo(:,1)==cu(cc) & all_data.use_trial==1;
-        
-        thisidx2 = find(thisidx);
-  
-        for ii = 1:length(thisidx2)   
-            histogram(all_data.s_all.f_sacc_err(thisidx2));
-  
-        end
-    end
-
-    xlim([-180 180]);ylim([0 100]);
-    set(gca,'TickDir','out','XTick',[-180 -90 0 90 180],'YTick',[0 50 100]); 
-    xlabel('Behavioral error (°)'); ylabel('Trial count');
-
-end
-
-%% 
-figure;
- 
-for ss = 1:length(which_subj_traj)
-    % compute theta...%theta=atan(y/x);
-%all_data.s_all.T = cellfun(@(x,y) atand(y/x),all_data.s_all.X,all_data.s_all.Y,'UniformOutput',false);
-    
-    for cc = 1:length(cu)
-        thisidx = all_data.subj_all==which_subj_traj(ss) & all_data.s_all.trialinfo(:,1)==cu(cc) & all_data.use_trial==1;
-        
-        thisidx2 = find(thisidx);
-        
-       report_loc = cart2pol(all_data.s_all.f_sacc(thisidx2,1),all_data.s_all.f_sacc(thisidx2,2));
-        %report_loc = atan2d(all_data.s_all.f_sacc(thisidx2,2),all_data.s_all.f_sacc(thisidx2,1));
-        theta = atan(1./1)
-
-        for ii = 1:length(thisidx2)
-         
-
-           %scatter(all_data.s_all.f_sacc(thisidx2,1),all_data.s_all.f_sacc(thisidx2,2));
-           %plot(targ_loc,report_loc,'o','LineWidth',1.5,'MarkerSize',5,'Color',[0.5 0.5 0.5]);
-          plot(all_data.s_all.targ(thisidx2,1),all_data.s_all.targ(thisidx2,2),'ro','MarkerFaceColor','r','MarkerSize',6);
-        end
-    end
-
-    xlim([0 360]);ylim([0 360]);
-    set(gca,'TickDir','out','XTick',[0 180 360],'YTick',[0 180 360]); 
-    xlabel('Target location (°)'); ylabel('Reported location (°)');
-
-end
 %% stats - shuffle condition labels within each subj before computing distributions, F-scores
 % - use only included trials? yes
 
