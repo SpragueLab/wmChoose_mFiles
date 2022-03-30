@@ -541,15 +541,15 @@ figure;
 for ss = 1:length(u_subj)
     for cc = 1:length(cu)
 
-        %subplot(length(cu),length(u_subj),(cc-1)*length(u_subj)+ss); hold on;
+        subplot(length(cu),length(u_subj),(cc-1)*length(u_subj)+ss); hold on;
 
-        thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==1;
+        thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(3) & all_data.use_trial==1;
 
         for ii = 1:length(thisidx)    
            
-           polarhistogram(all_data.s_all.TarRadian(thisidx),4);
- 
-
+           polarhistogram(all_data.s_all.TarT(thisidx),6);
+%            histogram(all_data.s_all.i_sacc_rt(thisidx),45,'BinLimits',[0 1.5],'FaceColor',cond_colors(cc,:));
+%            plot(all_data.s_all.TarT360(thisidx2),all_data.s_all.RepT360(thisidx2),'ro','MarkerFaceColor','r','MarkerSize',6);
            if ss == 1
             ylabel(cond_str{cc});
            end
@@ -565,6 +565,36 @@ for ss = 1:length(u_subj)
         end
     end
 
+%     xlim([0 360]);ylim([0 360]);
+%     set(gca,'TickDir','out','XTick',[0 180 360],'YTick',[0 180 360]); 
+%     xlabel('Target location (°)'); ylabel('Reported location (°)');
+
+end
+
+%%
+figure;
+for ss = 1:length(u_subj)
+    for cc = 1:length(cu)
+        
+        subplot(length(cu),length(u_subj),(cc-1)*length(u_subj)+ss); hold on;
+        
+        thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==1;
+
+        histogram(all_data.s_all.i_sacc_rt(thisidx),45,'BinLimits',[0 1.5],'FaceColor',cond_colors(cc,:));
+        
+        if ss == 1
+            ylabel(cond_str{cc});
+        end
+        
+        if cc == 1
+            title(u_subj{ss});
+        end
+        
+        if cc == length(cu)
+            xlabel('Polar Angle (°)');
+        end
+        
+    end
 end
 
 %% stats - shuffle condition labels within each subj before computing distributions, F-scores
