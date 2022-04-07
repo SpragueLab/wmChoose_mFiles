@@ -392,7 +392,7 @@ plot_v_offset = [30 15 0];
 % compute R...
 all_data.s_all.R = cellfun(@(x,y) sqrt(x.^2+y.^2),all_data.s_all.X,all_data.s_all.Y,'UniformOutput',false);
 
-which_subj_traj = 7; % to plot all, do which_subj_traj = subj;
+which_subj_traj = 1; % to plot all, do which_subj_traj = subj;
 
 figure;
 for ss = 1:length(which_subj_traj)
@@ -466,28 +466,6 @@ for ss = 1:length(which_subj_traj)
     
 end
 
-%% plot error distribution for examplar subj
-figure;
- 
-for ss = 1:length(which_subj_traj)
-    
-    
-    for cc = 1:length(cu)
-        thisidx = all_data.subj_all==which_subj_traj(ss) & all_data.s_all.trialinfo(:,1)==cu(cc) & all_data.use_trial==1;
-        
-        thisidx2 = find(thisidx);
-  
-        for ii = 1:length(thisidx2)   
-            histogram(all_data.s_all.f_sacc_err(thisidx2));
-  
-        end
-    end
-
-    xlim([-180 180]);ylim([0 100]);
-    set(gca,'TickDir','out','XTick',[-180 -90 0 90 180],'YTick',[0 50 100]); 
-    xlabel('Behavioral error (°)'); ylabel('Trial count');
-
-end
 
 %% Target loc against Report loc from examplar subj
     
@@ -511,27 +489,61 @@ all_data.s_all.RepT360 = mod(all_data.s_all.RepT+360,360);
 which_subj_traj = 1; % to plot all, do which_subj_traj = subj;
 
 figure;
-for ss = 1:length(which_subj_traj)
+for ss = 1:length(u_subj)
 
-    %subplot(length(which_subj_traj),1,ss); hold on;
+    
     
     for cc = 1:length(cu)
-        thisidx = all_data.subj_all==which_subj_traj(ss) & all_data.s_all.trialinfo(:,1)==cu(cc) & all_data.use_trial==1;
+
+        subplot(length(cu),length(u_subj),ss+length(u_subj)*(cc-1)); hold on;
+
+        thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(cc) & all_data.use_trial==1;
         thisidx2 = find(thisidx);
         
 
-        for ii = 1:length(thisidx2)    
+        %for ii = 1:length(thisidx2)    
            
-           plot(all_data.s_all.TarT360(thisidx2),all_data.s_all.RepT360(thisidx2),'ro','MarkerFaceColor','r','MarkerSize',6);
+           scatter(all_data.s_all.TarT360(thisidx2),all_data.s_all.RepT360(thisidx2),10,'r','filled', 'markerfacealpha',.5);
            
-        end
+        %end
+
+     xlim([0 360]);ylim([0 360]);
+     set(gca,'TickDir','out','XTick',[0 180 360],'YTick',[0 180 360]); 
+     xlabel('Target location (°)'); ylabel('Reported location (°)');
+     axis square;
     end
 
-    xlim([0 360]);ylim([0 360]);
-    set(gca,'TickDir','out','XTick',[0 180 360],'YTick',[0 180 360]); 
-    xlabel('Target location (°)'); ylabel('Reported location (°)');
+
 
 end
+
+%% plot error distribution for examplar subj
+
+all_data.s_all.f_sacc_180pol = all_data.s_all.TarT - all_data.s_all.RepT;
+
+figure;
+ 
+for ss = 1:length(which_subj_traj)
+    
+    
+    for cc = 1:length(cu)
+        thisidx = all_data.subj_all==which_subj_traj(ss) & all_data.s_all.trialinfo(:,1)==cu(cc) & all_data.use_trial==1;
+        
+        thisidx2 = find(thisidx);
+  
+        %for ii = 1:length(thisidx2)   
+            histogram(all_data.s_all.f_sacc_180pol(thisidx2),100);
+  
+        %end
+    end
+
+    xlim([-180 180]);ylim([0 100]);
+    set(gca,'TickDir','out','XTick',[-180 -90 0 90 180],'YTick',[0 50 100]); 
+    xlabel('Behavioral error (°)'); ylabel('Trial count');
+
+end
+
+
 %% plot polarhistogram of target location of choose condition for each subj
 
 %compute radian
@@ -541,34 +553,148 @@ figure;
 for ss = 1:length(u_subj)
     for cc = 1:length(cu)
 
-        %subplot(length(cu),length(u_subj),(cc-1)*length(u_subj)+ss); hold on;
+        subplot(length(cu),length(u_subj),(cc-1)*length(u_subj)+ss); hold on;
 
         thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==1;
 
-        for ii = 1:length(thisidx)    
+        %for ii = 1:length(thisidx)    
            
-           polarhistogram(all_data.s_all.TarRadian(thisidx),4);
+           histogram(all_data.s_all.TarRadian(thisidx),16);
  
 
-           if ss == 1
-            ylabel(cond_str{cc});
-           end
+%            if ss == 1
+%             ylabel(cond_str{cc});
+%            end
         
            if cc == 1
-            title(u_subj{ss});
+            title(sprintf('%s-%s',u_subj{ss},cond_str{cc}));
            end
         
-           if cc == length(cu)
-            xlabel('Polar Angle (°)');
+%            if cc == length(cu)
+%             xlabel('Polar Angle (°)');
+% 
+%            end
+        %end
+    end
 
+end
+
+%% seperate split half session for target loc choice for choose condition
+
+figure;
+for ss = 1:length(u_subj)
+
+    %his_split_half = [];
+    tmpr = all_data.r_all(all_data.subj_all==ss & all_data.c_all(:,1)==3);
+    nr = length(unique(tmpr)); % number of runs for this subj
+
+    this_split_half = (tmpr>ceil(nr/2))+1;
+
+    for ii = 1:2
+
+        subplot(2,length(u_subj),(ii-1)*length(u_subj)+ss); hold on;
+
+        thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==3;% & all_data.use_trial==1;
+        tmpd = all_data.s_all.TarRadian(thisidx);
+        
+        tmpuse = all_data.use_trial(thisidx);
+        
+        tmpd = tmpd(this_split_half==ii & tmpuse == 1);
+        
+        %for ii = 1:length(thisidx)    
+           
+           %histogram(all_data.s_all.TarRadian(thisidx),16);
+           histogram(tmpd,8);
+ 
+
+%            if ss == 1
+%             ylabel(cond_str{cc});
+%            end
+        
+            if ss ~=1
+                set(gca,'YTickLabel',[]);
+            end
+
+           if cc == 1
+            title(sprintf('%s-%s',u_subj{ss},cond_str{cc}));
            end
+        
+%            if cc == length(cu)
+%             xlabel('Polar Angle (°)');
+% 
+%            end
+        %end
+    end
+
+end
+
+match_ylim(get(gcf,'Children'));
+
+%% plot accuracy as function of location bin
+
+%comment each line of the below two graphs to make sure I can fully
+%understand
+
+my_Bin = 0:30:360; % create bin limit for 0 to 360, make 1 bin for 30 degree interval therefore result in 12 bins in total
+%[BINS, EDGES] = discretize(X,N) where N is a scalar integer, divides the range of X into N uniform bins, and also returns the bin edges.
+location_Bin = discretize(all_data.s_all.TarT360,my_Bin);
+
+bin_colors = hsv(length(my_Bin));
+
+figure;
+for ss = 1:length(u_subj)
+    
+    %for cc = 1:length(cu)
+    for cc = 1
+        subplot(4,5,ss);hold on
+        for bb = 1:(length(my_Bin)-1)
+
+        thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(2) & all_data.use_trial==1 & location_Bin==bb;
+        thisidx2 = find(thisidx);
+    
+           
+           plot((my_Bin(bb+1)+my_Bin(bb))/2,mean(all_data.s_all.f_sacc_err(thisidx2)),'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));
         end
     end
+
+    xlim([0 360]);ylim([0 5]);
+   % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]); 
+    xlabel('Target location (°)'); ylabel('Final Saccade Error');
+
+end
+
+%%
+
+figure;
+for ss = 1:length(u_subj)
+
+    this_n_choose = sum(all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(3) & all_data.use_trial==1);
+
+    %for cc = 1:length(cu)
+        subplot(4,5,ss);hold on
+        for bb = 1:(length(my_Bin)-1)
+
+        thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(2) & all_data.use_trial==1 & location_Bin==bb;
+        thisidx2 = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(3) & all_data.use_trial==1 & location_Bin==bb;
+        this_x = mean(all_data.s_all.f_sacc_err(thisidx));
+        this_y = sum(thisidx2)/this_n_choose;
+
+           plot(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));
+        end
+   
+
+    xlim([0 5]);ylim([0 0.4]);
+   % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]); 
+    xlabel('R2cued Error'); ylabel('Proportion of Choose');
 
 end
 
 %% stats - shuffle condition labels within each subj before computing distributions, F-scores
 % - use only included trials? yes
+
+fprintf('\nStats starting!!\n');
+
+
 
 % set the random number generator before we do stats
 rng(wmChoose_randSeed());
