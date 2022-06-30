@@ -837,9 +837,6 @@ end
 % Chi square goodness of fit test
 [h,p] = chi2gof(all_targ_colors_idx(:,1),'Alpha',0.05);
 
-% number of trial for each targe color
-[N]=histcounts(all_targ_colors_idx(:,1),4);
-normplot(all_targ_colors_idx(:,1));
 %% plot accuracy as function of location bin
 
 %comment each line of the below two graphs to make sure I can fully
