@@ -108,7 +108,8 @@ for pp = 1:length(to_plot)
         plot(cc+[-0.35 0.35],[1 1]*mean(thisd(:,cc)),'-','LineWidth',2.5,'Color',cond_colors(cc,:))
     end
     plot(1:length(cu),thisd.','-','Color',[0.5 0.5 0.5]);
-    
+    errorbar(1:length(cu),mean(thisd),std(thisd)/sqrt(length(thisd)),'--ko','MarkerSize',5,'MarkerEdgeColor','black','MarkerFaceColor','black','CapSize',10);
+
     set(gca,'XTick',1:length(cu),'TickDir','out','LineWidth',1.5,'XTickLabel',cond_str,'FontSize',14,'XTickLabelRotation',-45);
     xlim([0.5 0.5+length(cu)]);
     title(to_plot{pp},'Interpreter','none');
@@ -423,15 +424,15 @@ for cc = 1:length(cu)
 end
 
 % number of used trials per sub per condition
-%num_useTrial = nan(length(u_subj),length(cu));
-num_excTrial = nan(length(u_subj),length(cu));
+num_useTrial = nan(length(u_subj),length(cu));
+%num_excTrial = nan(length(u_subj),length(cu));
 for cc = 1:length(cu)
     for ss = 1:length(u_subj)
 
-            thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==0;
+            thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==1;
       
-            num_excTrial(ss,cc) = sum(thisidx);
-            %num_useTrial(ss,cc) = sum(thisidx);
+            %num_excTrial(ss,cc) = sum(thisidx);
+            num_useTrial(ss,cc) = sum(thisidx);
 
     end
 
@@ -691,7 +692,7 @@ end
 match_ylim(get(gcf,'Children'));
 %same_hemi_trials
 
-%% plot accuracy as function of target color
+%% target color investigation
 
 
 % we want:
@@ -701,22 +702,20 @@ match_ylim(get(gcf,'Children'));
 
 % first - figure out the unique colors
 
-% 200 0 0;        % red
-% 0 0 255;        % blue
-% 180 0 180;      % purple
-% 130 130 0;      % yellow
-%u_colors = unique(all_data.colors_all{20,1},'rows');
+% 200 0 0;        % red.78 0 0
+% 0 0 255;        % blue 0 0 1
+% 180 0 180;      % purple .71 0 .71
+% 130 130 0;      % yellow .51 .51 0
+
+u_colors = unique(all_data.colors_all{20,1},'rows');% get the unique value from the data set see how many color stimuli we had
 u_colors_rgb = [0 0 1;
-    .78 0 0;
     .51 .51 0;
-    .71 0 .71];
+    .71 0 .71;
+    .78 0 0];
 u_color_rgb = rgb2hsv(u_colors_rgb);
-all_targ_colors_idx = nan(length(all_subj),2);
+all_targ_colors_idx = nan(length(all_subj),2);% create a data structure for color index, each sub from each trial will have two values for the two stimuli color, one for R1
 
-
-all_col_corr = nan(length(u_subj),1);
-my_Colors = 1:1:4;
-
+% create the color index
 for ss = 1:length(u_subj)
 
     this_info = all_data.s_all.trialinfo(all_subj == ss,:);
@@ -746,6 +745,8 @@ for ss = 1:length(u_subj)
     all_targ_colors_idx(all_subj == ss,:) = this_colors_idx;
 end
 
+%% plot accuracy as function of target color 
+my_Colors = 1:1:4;
 
 figure;
 for ss = 1:length(u_subj)
@@ -760,6 +761,23 @@ for ss = 1:length(u_subj)
     xlabel('Target color'); ylabel('Final Saccade Error');
 end
 
+% same as above but collapses across subs
+
+figure;
+for ss = 1:length(u_subj)
+
+    for tt = 1:length(my_Colors)
+        subplot(1,1,1); hold on
+        thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(1) & all_data.use_trial==1 & all_targ_colors_idx == tt;
+
+        plot(my_Colors(tt),mean(all_data.s_all.f_sacc_err(thisidx)),'o','Color',u_colors_rgb(tt,:),'MarkerFaceColor',u_colors_rgb(tt,:));
+    end
+    xlim([0 5]);ylim([0 5]);
+    xlabel('Target color'); ylabel('Final Saccade Error');
+end
+%% plot R1 error against target color choice in R2Choose
+
+all_col_corr = nan(length(u_subj),1);
 
 figure;
 for ss = 1:length(u_subj)% loop through each subj
@@ -798,8 +816,12 @@ figure; hold on;
 plot(ones(size(all_col_corr)),all_col_corr,'ko');
 plot(1,mean(all_col_corr),'ko','MarkerSize',15,'LineWidth',1.5,'MarkerFaceColor','k');
 
+all_col_corr_z = atanh(all_col_corr);
 
-% num of trials from each subj for each color
+[H,P,CI,STATS] = ttest(all_col_corr_z);
+P
+STATS
+%% num of trials from each subj for each color in R2 Choose condition
 
 num_colorTrial = nan(length(u_subj),length(my_Colors));
 
@@ -835,8 +857,12 @@ for ss = 1:length(u_subj)% loop through each subj
 end
 
 % Chi square goodness of fit test
-[h,p] = chi2gof(all_targ_colors_idx(:,1),'Alpha',0.05);
+[h,p,stats] = chi2gof(all_targ_colors_idx(:,1),'Alpha',0.05);
 
+% number of trial for each targe color
+[N]=histcounts(all_targ_colors_idx(:,1),4);
+figure;
+normplot(all_targ_colors_idx(:,1));
 %% plot accuracy as function of location bin
 
 %comment each line of the below two graphs to make sure I can fully
@@ -868,6 +894,25 @@ for ss = 1:length(u_subj) % go through all the subjects
     xlim([0 360]);ylim([0 5]);
     xticks([0 90 180 270 360]);
    % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]); 
+    xlabel('Target location (°)'); ylabel('Final Saccade Error');
+
+end
+
+%same graph collapse across sub
+figure;
+for ss = 1:length(u_subj) % go through all the subjects
+    for bb = 1:(length(my_Bin)-1) % loop over 1 to 11 because we want 12 interval from 13 numbers, 0 and 360 is the same here
+        subplot(1,1,1);hold on
+        thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(1) & all_data.use_trial==1 & location_Bin==bb;
+        thisidx2 = find(thisidx);% minimize the data size for plot by selecting a group of data with the above criterions
+
+        plot((my_Bin(bb+1)+my_Bin(bb))/2,mean(all_data.s_all.f_sacc_err(thisidx2)),'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));
+        
+    end %plot(data point on x axis is ploted on the center of each interval e.g., (0+30)/2 = 15 and so on for all bin
+
+    xlim([0 360]);ylim([0 5]);
+    xticks([0 90 180 270 360]);
+    % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]);
     xlabel('Target location (°)'); ylabel('Final Saccade Error');
 
 end
@@ -927,7 +972,9 @@ for ss = 1:length(u_subj)% loop through each subj
 
 end
 
-%% plot R1 error against location choice see if correlation needed
+
+
+%% same as above plus correlation 
 
 my_Bin = 0:30:360; % create bin limit for 0 to 360, make 1 bin for 30 degree interval therefore result in 12 bins in total
 %[BINS, EDGES] = discretize(X,N) where N is a scalar integer, divides the range of X into N uniform bins, and also returns the bin edges.
@@ -955,7 +1002,7 @@ for ss = 1:length(u_subj) % go through all the subjects
     for bb = 1:(length(my_Bin)-1)
 
 
-        %subplot(length(my_Bin),length(u_subj),ss+length(u_subj)*(bb-1)); hold on;
+        
         subplot(4,5,ss); hold on;
 
         thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(1) & all_data.use_trial==1 & location_Bin==bb;
@@ -965,7 +1012,7 @@ for ss = 1:length(u_subj) % go through all the subjects
         this_y = sum(thisidx2)/this_n_choose;% compute the proportion of choose trials in different location bin over the overall number of choose trial
       
         scatter(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));%,'MarkerFaceColor',cond_colors(cc,:));
-      %  all_LOC_nChoose(bb,ss) = this_y;
+      
         
         tmpErr(bb) = this_x;
         tmpP (bb) = this_y;
@@ -974,7 +1021,7 @@ for ss = 1:length(u_subj) % go through all the subjects
     
     all_corr(ss) = corr(tmpErr,tmpP);
 
-   % all_R1muErr(bb,ss) = this_x;
+  
     xlim([0 5]);ylim([0 .5]);
     set(gca,'TickDir','out','XTick',[0 1 5],'YTick',[0 0.1 .5]);
     xlabel('R1 Error'); ylabel('Proportion of trials in R2 Choose');
@@ -984,9 +1031,21 @@ match_xlim(get(gcf,'Children')); match_ylim(get(gcf,'Children'));
 
 figure; hold on;
 
+
 plot(ones(size(all_corr)),all_corr,'ko');
 plot(1,mean(all_corr),'ko','MarkerSize',15,'LineWidth',1.5,'MarkerFaceColor','k');
 
+all_corr_z = atanh(all_corr);
+
+[H,P,CI,STATS] = ttest(all_corr_z);
+P
+STATS
+
+% figure();
+% scatter(tmpErr,tmpP); 
+% H = lsline;
+% [R,P] = corrcoef(tmpErr,tmpP);
+% annotation('textbox',[.8 .8 .1 .1],'String',sprintf('R = %.02f, p = %.02f',R(2),P(2)))
 %% plot R2 Cue error against location choice see if correlation needed
 
 all_R2muErr= nan(length(my_Bin)-1, length(u_subj));
@@ -1180,7 +1239,10 @@ for ss = 1:length(u_subj) % go through all the subjects
         %plot(all_data.s_all.i_sacc_rt(thisidx2),all_data.s_all.f_sacc_err(thisidx2),'o','Color',cond_colors(cc,:),'MarkerFaceColor',cond_colors(cc,:));
         scatter(all_data.s_all.i_sacc_rt(thisidx2),all_data.s_all.f_sacc_err(thisidx2),10,cond_colors(cc,:),'filled','MarkerFaceAlpha',0.3);%,'MarkerFaceColor',cond_colors(cc,:));
         [R,P] = corrcoef(all_data.s_all.i_sacc_rt(thisidx2),all_data.s_all.f_sacc_err(thisidx2));
+
         all_corr_RT_err(cc,ss) = R(1,2);
+     
+       
     end
 
 
@@ -1190,15 +1252,16 @@ for ss = 1:length(u_subj) % go through all the subjects
 end
 
 match_xlim(get(gcf,'Children')); match_ylim(get(gcf,'Children'));
-% Accuracy & RT correlation bin by conditions 
 
+
+% Accuracy & RT correlation bin by conditions
 figure;
 for ss = 1:length(u_subj) % go through all the subjects
 
     %subplot(4,5,ss); hold on
-
+    subplot(1,1,1);hold on
     for cc = 1:length(cu)
-        subplot(1,1,1);hold on
+
 
         thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(1) & all_data.use_trial==1;
         thisidx2 = find(thisidx);
@@ -1207,22 +1270,23 @@ for ss = 1:length(u_subj) % go through all the subjects
         %plot(all_data.s_all.i_sacc_rt(thisidx2),all_data.s_all.f_sacc_err(thisidx2),10,'Color',cond_colors(cc,:),'MarkerFaceAlpha',0.3);
         scatter(all_data.s_all.i_sacc_rt(thisidx2),all_data.s_all.f_sacc_err(thisidx2),10,cond_colors(1,:),'Filled','MarkerFaceColor',cond_colors(1,:));%,'MarkerFaceColor',cond_colors(cc,:));
         %H = lsline;
-%         [R,P] = corrcoef(all_data.s_all.i_sacc_rt(thisidx2),all_data.s_all.f_sacc_err(thisidx2)); 
-%         annotation('textbox',[.8 .8 .1 .1],'String',sprintf('R = %.02f, p = %.02f',R(2),P(2)))
+        %[R,P] = corrcoef(all_data.s_all.i_sacc_rt(thisidx2),all_data.s_all.f_sacc_err(thisidx2));
+        %annotation('textbox',[.8 .8 .1 .1],'String',sprintf('R = %.02f, p = %.02f',R(2),P(2)))
 
 
         xlim([0 1.5]);ylim([0 5]);
         set(gca,'TickDir','out','XTick',[0 .5 1.5],'YTick',[0 2.5 5]);
         xlabel('Response Time (s)'); ylabel('Final Saccade Error');
-        
+
     end
 
 end
 
- [R,P] = corrcoef(all_data.s_all.i_sacc_rt(thisidx2),all_data.s_all.f_sacc_err(thisidx2)); 
-        annotation('textbox',[.8 .8 .1 .1],'String',sprintf('R = %.02f, p = %.02f',R(2),P(2)))
+[R,P] = corrcoef(all_data.s_all.i_sacc_rt(thisidx2),all_data.s_all.f_sacc_err(thisidx2));
+annotation('textbox',[.8 .8 .1 .1],'String',sprintf('R = %.02f, p = %.02f',R(2),P(2)))
 
 match_xlim(get(gcf,'Children')); match_ylim(get(gcf,'Children'));
+
 % Accuracy & RT individual correlation bin by conditions 
 
 SEM_1  = std(all_corr_RT_err(1,:))/sqrt(length(all_corr_RT_err(1,:)));
@@ -1248,6 +1312,12 @@ for ss = 1:length(all_corr_RT_err)
 end
     
  match_xlim(get(gcf,'Children')); match_ylim(get(gcf,'Children'));
+
+ all_corr_RT_err_z = atanh(all_corr_RT_err(3,:));
+
+[H,P,CI,STATS] = ttest(all_corr_RT_err_z);
+P
+STATS
  
 %% stats - shuffle condition labels within each subj before computing distributions, F-scores
 % - use only included trials? yes
