@@ -151,6 +151,7 @@ for pp = 1:length(to_plot)
 end
 
 
+
 %% plot RT distribution for each subj, condition
 figure;
 for ss = 1:length(u_subj)
@@ -177,7 +178,31 @@ for ss = 1:length(u_subj)
     end
 end
 
-    
+
+
+%% for grants, plot just R2-cued and R2-choose, and just mean +- SEM
+figure; hold on;
+cu_grant = [2 3];
+tmpd = nan(length(subj),length(cu_grant));
+
+for cc = 1:length(cu_grant)
+    for ss = 1:length(subj)
+        thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu_grant(cc) & all_data.use_trial==1;
+        tmpd(ss,cc) = mean(all_data.s_all.('f_sacc_err')(thisidx));
+    end
+    thise = std(tmpd(:,cc),[],1)./sqrt(length(subj));
+    thism = mean(tmpd(:,cc),1);
+
+    plot(cc*[1 1],thism+[-1 1].*thise,'-','LineWidth',1,'Color',cond_colors(cu_grant(cc),:));
+    plot(cc,thism,'o','MarkerFaceColor','w','MarkerSize',10','LineWidth',1,'Color',cond_colors(cu_grant(cc),:));
+end
+
+ylim([1.3 2.3]);xlim([.5 2.5]);
+set(gca,'LineWidth',1,'TickDir','out','XTick',[1 2],'XTickLabel',{'Cued','Chosen'},'YTick',[1.25:.25:2.5],'FontSize',14);
+ylabel('Error');
+
+
+
 
 %% 2d distribution of all trials for i_sacc, f_sacc for each subj, condition
 to_plot_2d = {'i_sacc','f_sacc'};
