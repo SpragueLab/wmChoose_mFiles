@@ -88,7 +88,7 @@ cond_pairs = [1 2; 2 3; 1 3]; % x, y axes of scatterplot
 
 for pp = 1:length(to_plot)
 
-    fprintf('\nStats for %s\n',to_plot{pp});
+    fprintf('\nParametric stats for %s\n',to_plot{pp});
 
     figure(mean_fig);
     subplot(1,length(to_plot),pp); hold on;
@@ -134,7 +134,7 @@ for pp = 1:length(to_plot)
 
         [~,thisp,~,thisstats] = ttest(thisd(:,cond_pairs(cp,1)),thisd(:,cond_pairs(cp,2)));
 
-        fprintf('T-test: %s vs %s, T = %.03f, p = %0.05f\n',cond_str{cond_pairs(cp,1)},cond_str{cond_pairs(cp,2)}, thisstats.tstat,thisp);
+        fprintf('T-test: %s vs %s, T(%i) = %.03f, p = %0.05f, dz = %0.05f\n',cond_str{cond_pairs(cp,1)},cond_str{cond_pairs(cp,2)}, thisstats.df,thisstats.tstat,thisp,thisstats.tstat/sqrt(length(subj)));
 
         clear thisp thisstats;
 
@@ -143,8 +143,12 @@ for pp = 1:length(to_plot)
 
     % stats for this parameter (ANOVA)
     [thisp,thisanovatab] = anovan( thisd_anova,thisX_anova  , 'random',2,'varnames',{'condition','subj'},'model','interaction' ,'display','off');
+
+    % compute partial eta squared (SS_cond/(SS_cond+SS_err))
+    this_peta2 = thisanovatab{2,2}/(thisanovatab{2,2}+thisanovatab{4,2}); % SS_cond/(SS_cond + SS_cond*subj)
+    
     %[thisp,thisanovatab] = anovan( thisd_anova,thisX_anova  , 'random',2,'varnames',{'condition','subj'},'model','interaction');
-    fprintf('1-way RM AOV: F = %.03f, p = %0.05f\n\n',thisanovatab{2,6},thisp(1));
+    fprintf('1-way RM AOV: F(%i,%i) = %.03f, p = %0.05f, partial eta^2 = %0.05f\n\n',thisanovatab{2,3},thisanovatab{4,3},thisanovatab{2,6},thisp(1),this_peta2);
 
     clear thisp thisanovatab thisd_anova thisX_anova;
     
@@ -181,6 +185,7 @@ end
 
 
 %% for grants, plot just R2-cued and R2-choose, and just mean +- SEM
+if 0 % typically don't need to plot this figure
 figure; hold on;
 cu_grant = [2 3];
 tmpd = nan(length(subj),length(cu_grant));
@@ -200,7 +205,7 @@ end
 ylim([1.3 2.3]);xlim([.5 2.5]);
 set(gca,'LineWidth',1,'TickDir','out','XTick',[1 2],'XTickLabel',{'Cued','Chosen'},'YTick',[1.25:.25:2.5],'FontSize',14);
 ylabel('Error');
-
+end
 
 
 
@@ -843,9 +848,15 @@ plot(1,mean(all_col_corr),'ko','MarkerSize',15,'LineWidth',1.5,'MarkerFaceColor'
 
 all_col_corr_z = atanh(all_col_corr);
 
-[H,P,CI,STATS] = ttest(all_col_corr_z);
-P
-STATS
+% compute and spit out stats for this test
+[~,thisp,~,thisstats] = ttest(all_col_corr_z);
+
+fprintf('\nColor heuristic analysis: t-test of correlations against 0\n');
+fprintf('T-test: corr against zero, T(%i) = %.05f, p = %.05f, dz = %.05f\n\n',thisstats.df,thisstats.tstat,thisp,thisstats.tstat/sqrt(length(subj)));
+
+
+clear thisp thisstats;
+
 %% num of trials from each subj for each color in R2 Choose condition
 
 num_colorTrial = nan(length(u_subj),length(my_Colors));
@@ -1020,7 +1031,7 @@ all_corr = nan(length(u_subj),1);
 figure;
 for ss = 1:length(u_subj) % go through all the subjects
 
-       this_n_choose = sum(all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(3) & all_data.use_trial==1);% compute all number of trials in choose condition
+    this_n_choose = sum(all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(3) & all_data.use_trial==1);% compute all number of trials in choose condition
     tmpErr = nan(length(my_Bin)-1,1);
     tmpP = nan(length(my_Bin)-1,1);
 
@@ -1030,11 +1041,11 @@ for ss = 1:length(u_subj) % go through all the subjects
         
         subplot(4,5,ss); hold on;
 
-        thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(1) & all_data.use_trial==1 & location_Bin==bb;
+        thisidx  = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(1) & all_data.use_trial==1 & location_Bin==bb;
         thisidx2 = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(3) & all_data.use_trial==1 & location_Bin==bb;
 
         this_x = mean(all_data.s_all.f_sacc_err(thisidx));% compute the mean of memory error for cue condition
-        this_y = sum(thisidx2)/this_n_choose;% compute the proportion of choose trials in different location bin over the overall number of choose trial
+        this_y = sum(thisidx2)/this_n_choose; % compute the proportion of choose trials in different location bin over the overall number of choose trial
       
         scatter(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));%,'MarkerFaceColor',cond_colors(cc,:));
       
@@ -1062,9 +1073,13 @@ plot(1,mean(all_corr),'ko','MarkerSize',15,'LineWidth',1.5,'MarkerFaceColor','k'
 
 all_corr_z = atanh(all_corr);
 
-[H,P,CI,STATS] = ttest(all_corr_z);
-P
-STATS
+% compute and spit out stats for this test
+[~,thisp,~,thisstats] = ttest(all_corr_z);
+
+fprintf('\nLocation heuristic analysis: t-test of correlations against 0\n');
+fprintf('T-test: corr against zero, T(%i) = %.05f, p = %.05f, dz = %.05f\n\n',thisstats.df,thisstats.tstat,thisp,thisstats.tstat/sqrt(length(subj)));
+
+clear thisp thisstats;
 
 % figure();
 % scatter(tmpErr,tmpP); 
@@ -1385,6 +1400,10 @@ for ii = 1:(niter+1)
         % radial, tangential error
         for dd = 1:length(dim_to_plot)
             
+%             if ii == 1
+%                 fprintf('\n\nRunning stats for %s - %s\n',to_plot_2d{pp},dim_str{dim_to_plot(dd)});
+%             end
+
             % dependent variable - filtered the same way as above!
             this_data = all_data.s_all.(to_plot_2d{pp})(all_data.use_trial==1,dim_to_plot(dd));
             
@@ -1403,14 +1422,31 @@ for ii = 1:(niter+1)
             end
             
             allF(pp,dd,ii) = RMAOV1(thisX);
+
+            % do a full 'real' stats w/ anovan for the first iteration (to
+            % match euclidean error at top)
+            if ii == 1
+                % stats for this parameter (ANOVA)
+                [thisp,thisanovatab] = anovan( thisX(:,1),thisX(:,[2 3])  , 'random',2,'varnames',{'condition','subj'},'model','interaction' ,'display','off');
+
+                % compute partial eta squared (SS_cond/(SS_cond+SS_err))
+                this_peta2 = thisanovatab{2,2}/(thisanovatab{2,2}+thisanovatab{4,2}); % SS_cond/(SS_cond + SS_cond*subj)
+
+                fprintf('\nParametric stats - %s, %s\n',to_plot_2d{pp},dim_str{dim_to_plot(dd)});
+                fprintf('1-way RM AOV: F(%i,%i) = %.03f, p = %0.05f, partial eta^2 = %0.05f\n',thisanovatab{2,3},thisanovatab{4,3},thisanovatab{2,6},thisp(1),this_peta2);
+            end
+
             
             for cp_idx = 1:size(cond_pairs,1)
 %                 if ii == 1
 %                     allT{cp_idx} = nan(length(to_plot_2d),length(dim_to_plot),niter+1);
 %                 end
-                [~,~,~,tmp_stats] = ttest(thisX(thisX(:,2)==cond_pairs(cp_idx,1),1),thisX(thisX(:,2)==cond_pairs(cp_idx,2),1));
+                [~,tmp_p,~,tmp_stats] = ttest(thisX(thisX(:,2)==cond_pairs(cp_idx,1),1),thisX(thisX(:,2)==cond_pairs(cp_idx,2),1));
+                if ii == 1
+                    fprintf('%s vs %s: T(%i) = %0.03f, p = %0.03f, dz = %0.05f\n',cond_str{cond_pairs(cp_idx,1)},cond_str{cond_pairs(cp_idx,2)},tmp_stats.df,tmp_stats.tstat,tmp_p,tmp_stats.tstat/sqrt(length(subj)));
+                end
                 allT{cp_idx}(pp,dd,ii) = tmp_stats.tstat;
-                clear tmp_stats;
+                clear tmp_stats tmp_p;
             end
             
             clear cnt thisX;
@@ -1440,6 +1476,7 @@ for cp_idx = 1:size(cond_pairs,1)
     %fprintf('\n');
 end
 
+fprintf('\n\n');
 
 % ~~~~~ for now, hack and just do dd==3 on its own...
 
@@ -1492,14 +1529,31 @@ for ii = 1:(niter+1)
             end
             
             allF(pp,ii) = RMAOV1(thisX);
+
+            % do a full 'real' stats w/ anovan for the first iteration (to
+            % match euclidean error at top)
+            if ii == 1
+                % stats for this parameter (ANOVA)
+                [thisp,thisanovatab] = anovan( thisX(:,1),thisX(:,[2 3])  , 'random',2,'varnames',{'condition','subj'},'model','interaction' ,'display','off');
+
+                % compute partial eta squared (SS_cond/(SS_cond+SS_err))
+                this_peta2 = thisanovatab{2,2}/(thisanovatab{2,2}+thisanovatab{4,2}); % SS_cond/(SS_cond + SS_cond*subj)
+
+                fprintf('\nParametric stats - %s, avg\n',to_plot_2d{pp});
+                fprintf('1-way RM AOV: F(%i,%i) = %.03f, p = %0.05f, partial eta^2 = %0.05f\n',thisanovatab{2,3},thisanovatab{4,3},thisanovatab{2,6},thisp(1),this_peta2);
+            end
             
             for cp_idx = 1:size(cond_pairs,1)
 %                 if ii == 1
 %                     allT{cp_idx} = nan(length(to_plot_2d),length(dim_to_plot),niter+1);
 %                 end
-                [~,~,~,tmp_stats] = ttest(thisX(thisX(:,2)==cond_pairs(cp_idx,1),1),thisX(thisX(:,2)==cond_pairs(cp_idx,2),1));
+                [~,tmp_p,~,tmp_stats] = ttest(thisX(thisX(:,2)==cond_pairs(cp_idx,1),1),thisX(thisX(:,2)==cond_pairs(cp_idx,2),1));
+                if ii == 1
+                    fprintf('%s vs %s: T(%i) = %0.03f, p = %0.03f, dz = %0.05f\n',cond_str{cond_pairs(cp_idx,1)},cond_str{cond_pairs(cp_idx,2)},tmp_stats.df,tmp_stats.tstat,tmp_p,tmp_stats.tstat/sqrt(length(subj)));
+                end
+
                 allT{cp_idx}(pp,ii) = tmp_stats.tstat;
-                clear tmp_stats;
+                clear tmp_stats tmp_p;
             end
             
             clear cnt thisX;
