@@ -1353,12 +1353,18 @@ end
     
  match_xlim(get(gcf,'Children')); match_ylim(get(gcf,'Children'));
 
- all_corr_RT_err_z = atanh(all_corr_RT_err(3,:));
+fprintf('\nRT vs error for each condition\n');
 
-[H,P,CI,STATS] = ttest(all_corr_RT_err_z);
-P
-STATS
- 
+for cc = 1:size(all_corr_RT_err,1)
+    all_corr_RT_err_z = atanh(all_corr_RT_err(cc,:));
+
+    [~,thisp,~,thisstats] = ttest(all_corr_RT_err_z);
+
+    fprintf('T-test: %s against 0, T(%i) = %.03f, p = %0.05f, d = %0.05f\n',cond_str{cc}, thisstats.df,thisstats.tstat,thisp,mean(all_corr_RT_err_z)/std(all_corr_RT_err_z));
+
+
+
+end 
 %% stats - shuffle condition labels within each subj before computing distributions, F-scores
 % - use only included trials? yes
 
