@@ -935,7 +935,7 @@ for ss = 1:length(u_subj) % go through all the subjects
         thisidx2 = find(thisidx);% minimize the data size for plot by selecting a group of data with the above criterions
 
 
-        plot((my_Bin(bb+1)+my_Bin(bb))/2,mean(all_data.s_all.f_sacc_err(thisidx2)),'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));
+        plot((my_Bin(bb+1)+my_Bin(bb))/2,mean(all_data.s_all.f_sacc_err(thisidx2)),'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:),'MarkerSize',4);
     end %plot(data point on x axis is ploted on the center of each interval e.g., (0+30)/2 = 15 and so on for all bin
 
     text(330,4.5,u_subj{ss},'FontAngle','italic','HorizontalAlignment','right');
@@ -1067,7 +1067,7 @@ for ss = 1:length(u_subj) % go through all the subjects
         this_y = sum(thisidx2)/this_n_choose; % compute the proportion of choose trials in different location bin over the overall number of choose trial
       
         %scatter(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));%,'MarkerFaceColor',cond_colors(cc,:));
-        plot(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));
+        plot(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:),'MarkerSize',4);
         
         tmpErr(bb) = this_x;
         tmpP (bb) = this_y;
@@ -1076,11 +1076,11 @@ for ss = 1:length(u_subj) % go through all the subjects
     
     all_corr(ss) = corr(tmpErr,tmpP);
 
-    text(4.5,0.45,u_subj{ss},'FontAngle','italic','HorizontalAlignment','right');
+    text(4.5,0.27,u_subj{ss},'FontAngle','italic','HorizontalAlignment','right');
 
 
-    xlim([0 5]);ylim([0 0.5]);
-    xticks(0:2:6);yticks(0:0.2:0.4);
+    xlim([0 5]);ylim([0 0.3]);
+    xticks(0:2:6);yticks(0:0.1:0.3);
 
     % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]);
     if ss == 16; xlabel('R1 Error (MAE; °)'); ylabel('Proportion location chosen');end
@@ -1090,17 +1090,26 @@ end
 
 match_xlim(get(gcf,'Children')); match_ylim(get(gcf,'Children'));
 
+
+all_corr_z = atanh(all_corr);
+
+% compute mean and SEM using R-to-Z transformed values, plot these
+% converted back to R (see below)
+thismz = mean(all_corr_z);
+thisez = std(all_corr_z)/sqrt(length(subj));
+
+
 % plot all correlation values & their mean
 figure; hold on;
 
-plot(ones(size(all_corr)),all_corr,'ko');
-plot(1,mean(all_corr),'ko','MarkerSize',15,'LineWidth',1.5,'MarkerFaceColor','k');
+plot([1.1;1.1],tanh(thismz+[-1;1]*thisez),'k-','LineWidth',1.5);
+plot(ones(size(all_corr))-0.1,all_corr,'ko','MarkerFaceColor','k');
+plot(1.1,tanh(thismz),'ko','MarkerSize',10,'LineWidth',1.5,'MarkerFaceColor','w');
 
 xlim([0.5 1.5]); ylim([-1 1]);xticks(1); yticks(-1:0.5:1);
 set(gca,'TickDir','out','LineWidth',0.75);
 ylabel('Correlation');
 
-all_corr_z = atanh(all_corr);
 
 % compute and spit out stats for this test
 [~,thisp,~,thisstats] = ttest(all_corr_z);
@@ -1109,6 +1118,18 @@ fprintf('\nLocation heuristic analysis: t-test of correlations against 0\n');
 fprintf('T-test: corr against zero, T(%i) = %.05f, p = %.05f, dz = %.05f\n\n',thisstats.df,thisstats.tstat,thisp,thisstats.tstat/sqrt(length(subj)));
 
 clear thisp thisstats;
+
+
+% plot a quick figure of location bins
+figure; hold on;
+for bb = 1:(length(my_Bin)-1)
+    tmpth = linspace(my_Bin(bb),my_Bin(bb+1),101);
+
+    plot(cosd(tmpth),sind(tmpth),'-','LineWidth',3,'Color',bin_colors(bb,:));
+end
+plot(0,0,'ko','MarkerFaceColor','k');
+xlim([-1.1 1.1]); ylim([-1.1 1.1]); axis square; axis off; 
+
 
 % figure();
 % scatter(tmpErr,tmpP); 
