@@ -914,23 +914,26 @@ bin_colors = hsv(length(my_Bin));%give each bin a distinct color
 
 figure;
 for ss = 1:length(u_subj) % go through all the subjects
-    
-    
-        subplot(4,5,ss);hold on % create 20 plots in 4 by 5 arrangement
-        for bb = 1:(length(my_Bin)-1) % loop over 1 to 11 because we want 12 interval from 13 numbers, 0 and 360 is the same here
+
+
+    subplot(4,5,ss);hold on % create 20 plots in 4 by 5 arrangement
+    for bb = 1:(length(my_Bin)-1) % loop over 1 to 11 because we want 12 interval from 13 numbers, 0 and 360 is the same here
 
         thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(1) & all_data.use_trial==1 & location_Bin==bb;
         thisidx2 = find(thisidx);% minimize the data size for plot by selecting a group of data with the above criterions
-    
-           
-           plot((my_Bin(bb+1)+my_Bin(bb))/2,mean(all_data.s_all.f_sacc_err(thisidx2)),'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));
-        end %plot(data point on x axis is ploted on the center of each interval e.g., (0+30)/2 = 15 and so on for all bin
-   
+
+
+        plot((my_Bin(bb+1)+my_Bin(bb))/2,mean(all_data.s_all.f_sacc_err(thisidx2)),'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));
+    end %plot(data point on x axis is ploted on the center of each interval e.g., (0+30)/2 = 15 and so on for all bin
+
+    text(330,4.5,u_subj{ss},'FontAngle','italic','HorizontalAlignment','right');
 
     xlim([0 360]);ylim([0 5]);
     xticks([0 90 180 270 360]);
-   % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]); 
-    xlabel('Target location (°)'); ylabel('Final Saccade Error');
+    yticks(0:2:6);
+    % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]);
+    if ss == 16; xlabel('Target location (°)'); ylabel('Final Saccade Error (MAE; °)'); end
+    set(gca,'TickDir','out','LineWidth',0.75);
 
 end
 
@@ -949,8 +952,8 @@ for ss = 1:length(u_subj) % go through all the subjects
     xlim([0 360]);ylim([0 5]);
     xticks([0 90 180 270 360]);
     % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]);
-    xlabel('Target location (°)'); ylabel('Final Saccade Error');
-
+    xlabel('Target location (°)'); ylabel('Final Saccade Error (MAE; °)');
+    set(gca,'TickDir','out');
 end
 
 
@@ -980,34 +983,38 @@ for ss = 1:length(u_subj) % go through all the subjects
 end
 
 
-%% plot accuracy for R1 and R2choose as function of location bin
-
+%% plot probability for R2choose against R1 precision as function of location bin
+if 0 % this is exactly the same as below - no need to plot it twice... [flag to delete this version]
 figure;
 for ss = 1:length(u_subj)% loop through each subj
 
     this_n_choose = sum(all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(3) & all_data.use_trial==1);% compute all number of trials in choose condition
 
     %for cc = 1:length(cu)
-        subplot(4,5,ss);hold on
-        for bb = 1:(length(my_Bin)-1) % loop through each location bin
+    subplot(4,5,ss);hold on
+    for bb = 1:(length(my_Bin)-1) % loop through each location bin
 
-        thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(1) & all_data.use_trial==1 & location_Bin==bb;% index trials used in one object condition
+        thisidx  = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(1) & all_data.use_trial==1 & location_Bin==bb;% index trials used in one object condition
         thisidx2 = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(3) & all_data.use_trial==1 & location_Bin==bb;% index trials used in choose condition
         this_x = mean(all_data.s_all.f_sacc_err(thisidx));% compute the mean of memory error for cue condition
         this_y = sum(thisidx2)/this_n_choose;% compute the proportion of choose trials in different location bin over the overall number of choose trial
 
-           plot(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));
-           %[R,P] = corrcoef(this_x, this_y);
-        end
-   
+        plot(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));
+        %[R,P] = corrcoef(this_x, this_y);
+    end
+
+    text(4.5,0.3,u_subj{ss},'FontAngle','italic','HorizontalAlignment','right');
+
 
     xlim([0 5]);ylim([0 0.4]);
-    
-   % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]); 
-    xlabel('R1 Error'); ylabel('Proportion of Choose');
+    xticks(0:2:6);yticks(0:0.2:0.4);
+
+    % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]);
+    if ss == 16; xlabel('R1 Error (MAE; °)'); ylabel('Proportion of Choose');end
+    set(gca,'TickDir','out','LineWidth',0.75);
 
 end
-
+end
 
 
 %% same as above plus correlation 
@@ -1047,8 +1054,8 @@ for ss = 1:length(u_subj) % go through all the subjects
         this_x = mean(all_data.s_all.f_sacc_err(thisidx));% compute the mean of memory error for cue condition
         this_y = sum(thisidx2)/this_n_choose; % compute the proportion of choose trials in different location bin over the overall number of choose trial
       
-        scatter(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));%,'MarkerFaceColor',cond_colors(cc,:));
-      
+        %scatter(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));%,'MarkerFaceColor',cond_colors(cc,:));
+        plot(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));
         
         tmpErr(bb) = this_x;
         tmpP (bb) = this_y;
@@ -1057,19 +1064,29 @@ for ss = 1:length(u_subj) % go through all the subjects
     
     all_corr(ss) = corr(tmpErr,tmpP);
 
+    text(4.5,0.45,u_subj{ss},'FontAngle','italic','HorizontalAlignment','right');
+
+
+    xlim([0 5]);ylim([0 0.5]);
+    xticks(0:2:6);yticks(0:0.2:0.4);
+
+    % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]);
+    if ss == 16; xlabel('R1 Error (MAE; °)'); ylabel('Proportion location chosen');end
+    set(gca,'TickDir','out','LineWidth',0.75);
   
-    xlim([0 5]);ylim([0 .5]);
-    set(gca,'TickDir','out','XTick',[0 1 5],'YTick',[0 0.1 .5]);
-    xlabel('R1 Error'); ylabel('Proportion of trials in R2 Choose');
 end
 
 match_xlim(get(gcf,'Children')); match_ylim(get(gcf,'Children'));
 
+% plot all correlation values & their mean
 figure; hold on;
-
 
 plot(ones(size(all_corr)),all_corr,'ko');
 plot(1,mean(all_corr),'ko','MarkerSize',15,'LineWidth',1.5,'MarkerFaceColor','k');
+
+xlim([0.5 1.5]); ylim([-1 1]);xticks(1); yticks(-1:0.5:1);
+set(gca,'TickDir','out','LineWidth',0.75);
+ylabel('Correlation');
 
 all_corr_z = atanh(all_corr);
 
@@ -1107,15 +1124,27 @@ for ss = 1:length(u_subj) % go through all the subjects
         this_x = mean(all_data.s_all.f_sacc_err(thisidx));% compute the mean of memory error for cue condition
         this_y = sum(thisidx2)/this_n_choose;% compute the proportion of choose trials in different location bin over the overall number of choose trial
       
-        scatter(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));%,'MarkerFaceColor',cond_colors(cc,:));
+        plot(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));
+        %scatter(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));%,'MarkerFaceColor',cond_colors(cc,:));
         all_LOC_nChoose(bb,ss) = this_y;
         all_R2muErr(bb,ss) = this_x;
 
     end
 
+    text(4.5,0.3,u_subj{ss},'FontAngle','italic','HorizontalAlignment','right');
+
+
+    xlim([0 5]);ylim([0 0.4]);
+    xticks(0:2:6);yticks(0:0.2:0.4);
+
+    % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]);
+    if ss == 16; xlabel('R1 Error (MAE; °)'); ylabel('Proportion of Choose');end
+    set(gca,'TickDir','out','LineWidth',0.75);
+
+
     xlim([0 5]);ylim([0 .5]);
-    set(gca,'TickDir','out','XTick',[0 1 5],'YTick',[0 0.1 .5]);
-    xlabel('R2 Cue Error'); ylabel('Proportion of trials in R2 Choose');
+    set(gca,'TickDir','out','XTick',[0:2:5],'YTick',[0:0.2:0.5]);
+    if ss == 16; xlabel('R2 Cue Error (MAE; °)'); ylabel('Proportion location chosen');end
 end
 
 match_xlim(get(gcf,'Children')); match_ylim(get(gcf,'Children'));
@@ -1353,12 +1382,18 @@ end
     
  match_xlim(get(gcf,'Children')); match_ylim(get(gcf,'Children'));
 
- all_corr_RT_err_z = atanh(all_corr_RT_err(3,:));
+fprintf('\nRT vs error for each condition\n');
 
-[H,P,CI,STATS] = ttest(all_corr_RT_err_z);
-P
-STATS
- 
+for cc = 1:size(all_corr_RT_err,1)
+    all_corr_RT_err_z = atanh(all_corr_RT_err(cc,:));
+
+    [~,thisp,~,thisstats] = ttest(all_corr_RT_err_z);
+
+    fprintf('T-test: %s against 0, T(%i) = %.03f, p = %0.05f, d = %0.05f\n',cond_str{cc}, thisstats.df,thisstats.tstat,thisp,mean(all_corr_RT_err_z)/std(all_corr_RT_err_z));
+
+
+
+end 
 %% stats - shuffle condition labels within each subj before computing distributions, F-scores
 % - use only included trials? yes
 
