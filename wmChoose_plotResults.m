@@ -79,7 +79,8 @@ scatter_fig = figure;
 to_plot = {'f_sacc_err','i_sacc_rt'};
 cu = unique(all_data.c_all(:,1));
 
-cond_str = {'R1','R2-cue','R2-choose'};
+%cond_str = {'R1','R2-cue','R2-choose'};
+cond_str = {'R1','R2-random','R2-best'};
 
 cond_colors = lines(length(cu));
 
@@ -105,12 +106,23 @@ for pp = 1:length(to_plot)
             thisX_anova(cnt,:) = [cu(cc) ss];
             cnt = cnt+1;
         end
-        plot(cc+[-0.35 0.35],[1 1]*mean(thisd(:,cc)),'-','LineWidth',2.5,'Color',cond_colors(cc,:))
+        %plot(cc+[-0.35 0.35],[1 1]*mean(thisd(:,cc)),'-','LineWidth',2.5,'Color',cond_colors(cc,:))
     end
     plot(1:length(cu),thisd.','-','Color',[0.5 0.5 0.5]);
-    errorbar(1:length(cu),mean(thisd),std(thisd)/sqrt(length(thisd)),'--ko','MarkerSize',5,'MarkerEdgeColor','black','MarkerFaceColor','black','CapSize',10);
+    for cc = 1:length(cu)
+        %for ss = 1:length(u_subj)
+        plot(cc,thisd(:,cc),'o','MarkerSize',1.5,'Color',cond_colors(cc,:),'MarkerFaceColor',cond_colors(cc,:));
 
-    set(gca,'XTick',1:length(cu),'TickDir','out','LineWidth',1.5,'XTickLabel',cond_str,'FontSize',14,'XTickLabelRotation',-45);
+        thism = mean(thisd(:,cc)); thise = std(thisd(:,cc))/sqrt(length(subj));
+
+        plot(cc*[1;1],thism+[-1;1]*thise,'-','Color',cond_colors(cc,:),'LineWidth',2);
+        plot(cc,mean(thisd(:,cc)),'o','MarkerSize',7,'LineWidth',2,'Color',cond_colors(cc,:),'MarkerFaceColor','w');
+
+        %end
+    end
+    %errorbar(1:length(cu),mean(thisd),std(thisd)/sqrt(length(thisd)),'--ko','MarkerSize',5,'MarkerEdgeColor','black','MarkerFaceColor','black','CapSize',10);
+
+    set(gca,'XTick',1:length(cu),'TickDir','out','LineWidth',1,'XTickLabel',cond_str,'FontSize',14,'XTickLabelRotation',-45);
     xlim([0.5 0.5+length(cu)]);
     title(to_plot{pp},'Interpreter','none');
     
