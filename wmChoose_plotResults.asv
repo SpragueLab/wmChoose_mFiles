@@ -14,7 +14,7 @@
 
 root = 'Z:/projects/wmChoose';
 subj = {'sub001','sub002','sub003','sub004','sub005','sub006','sub007','sub008','sub009','sub010','sub011','sub012','sub013','sub014','sub016','sub017','sub018','sub019','sub020','sub021'};
-%subj = {'sub001','sub003','sub004','sub005','sub007','sub008','sub009','sub010','sub011','sub012','sub013','sub014','sub016','sub017','sub018','sub019','sub021'};
+%subj = {'sub001','sub003','sub004','sub005','sub007','sub008','sub010','sub011','sub012','sub013','sub016','sub017','sub018','sub019','sub020'};
 
 %WHICH_EXCL = [11 13 20 21 22]; % don't exclude trials w/ calibration failures for now...
 WHICH_EXCL = [13 20 21]; % don't exclude trials w/ calibration failures for now...
@@ -450,35 +450,22 @@ set(gcf,'Name','Bias','NumberTitle','off');
 
 % TODO: 
 % - trial exclusion % by condition (maybe broken down by exclusion type?)
-%% table of % included trials from each subj for each condition
+%% table of % included trials from each subj
 
-percent_useTrial = nan(length(u_subj),length(cu));
-
+percent_useTrial = nan(length(u_subj),1);
+percent_excTrial = nan(length(u_subj),1);
 for cc = 1:length(cu)
     for ss = 1:length(u_subj)
 
-            thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==1;
-      
-        percent_useTrial(ss,cc) = sum(thisidx/sum(all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(cc)));
-
+        thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==1;
+        thisidx2 = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==0;
+        thisidx3 = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc);
+        percent_useTrial(ss) = sum(thisidx)/sum(thisidx3);
+        percent_excTrial(ss) = sum(thisidx2)/sum(thisidx3);
     end
 
 end
 
-% number of used trials per sub per condition
-num_useTrial = nan(length(u_subj),length(cu));
-%num_excTrial = nan(length(u_subj),length(cu));
-for cc = 1:length(cu)
-    for ss = 1:length(u_subj)
-
-            thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==1;
-      
-            %num_excTrial(ss,cc) = sum(thisidx);
-            num_useTrial(ss,cc) = sum(thisidx);
-
-    end
-
-end
 % - trace for each condition; distribution for each condition
 
 %% response saccade trajectories for examplar subj, condition
@@ -869,48 +856,6 @@ fprintf('T-test: corr against zero, T(%i) = %.05f, p = %.05f, dz = %.05f\n\n',th
 
 clear thisp thisstats;
 
-%% num of trials from each subj for each color in R2 Choose condition
-
-num_colorTrial = nan(length(u_subj),length(my_Colors));
-
-for tt = 1:length(my_Colors)
-    for ss = 1:length(u_subj)
-
-        thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(3) & all_targ_colors_idx(:,1)==tt & all_data.use_trial==1 ;
-
-        num_colorTrial(ss,tt) = sum(thisidx);
-
-    end
-
-end
-
-
-figure;
-for ss = 1:length(u_subj)% loop through each subj
-
-    subplot(4,5,ss);hold on
-    for tt = 1:length(my_Colors)
-
-        thisidx2 = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(3) & all_data.use_trial==1 & all_targ_colors_idx(:,1) == tt;% index trials used in choose condition
-        plot(sum(thisidx2),mean(all_data.s_all.f_sacc_err(thisidx2)),'o','Color',u_colors_rgb(tt,:),'MarkerFaceColor',u_colors_rgb(tt,:));
-
-    end
-
-
-    xlim([10 100]);ylim([0 5]);
-
-    % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]);
-    xlabel('Number of Trials'); ylabel('R2 Choose Error');
-
-end
-
-% Chi square goodness of fit test
-[h,p,stats] = chi2gof(all_targ_colors_idx(:,1),'Alpha',0.05);
-
-% number of trial for each targe color
-[N]=histcounts(all_targ_colors_idx(:,1),4);
-figure;
-normplot(all_targ_colors_idx(:,1));
 %% plot accuracy as function of location bin
 
 %comment each line of the below two graphs to make sure I can fully
@@ -967,33 +912,6 @@ for ss = 1:length(u_subj) % go through all the subjects
     xlabel('Target location (°)'); ylabel('Final Saccade Error (MAE; °)');
     set(gca,'TickDir','out');
 end
-
-
-%% plot accuracy in radial and tengential seperately as function of location bin
-all_data.s_all.f_sacc_tangError = abs(all_data.s_all.targ(:,1) - all_data.s_all.f_sacc_raw(:,1));
-all_data.s_all.f_sacc_radError = abs(all_data.s_all.targ(:,2) - all_data.s_all.f_sacc_raw(:,2));
-
-figure;
-for ss = 1:length(u_subj) % go through all the subjects
-    
-    
-        subplot(4,5,ss);hold on % create 20 plots in 4 by 5 arrangement
-        for bb = 1:(length(my_Bin)-1) % loop over 1 to 11 because we want 12 interval from 13 numbers, 0 and 360 is the same here
-
-        thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(1) & all_data.use_trial==1 & location_Bin==bb;
-        thisidx2 = find(thisidx);% minimize the data size for plot by selecting a group of data with the above criterions
-    
-           
-           plot((my_Bin(bb+1)+my_Bin(bb))/2,mean(all_data.s_all.f_sacc_radError(thisidx2)),'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));
-        end %plot(data point on x axis is ploted on the center of each interval e.g., (0+30)/2 = 15 and so on for all bin
-   
-
-    xlim([0 360]);ylim([0 5]);
-    xticks([0 90 180 270 360]);
-   % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]); 
-    xlabel('Target location (°)'); ylabel('Final Saccade Radial Error');
-end
-
 
 %% plot probability for R2choose against R1 precision as function of location bin
 if 0 % this is exactly the same as below - no need to plot it twice... [flag to delete this version]
@@ -1125,8 +1043,10 @@ figure; hold on;
 for bb = 1:(length(my_Bin)-1)
     tmpth = linspace(my_Bin(bb),my_Bin(bb+1),101);
 
-    plot(cosd(tmpth),sind(tmpth),'-','LineWidth',3,'');
+    plot(cosd(tmpth),sind(tmpth),'-','LineWidth',3,'Color',bin_colors(bb,:));
 end
+plot(0,0,'ko','MarkerFaceColor','k');
+xlim([-1.1 1.1]); ylim([-1.1 1.1]); axis square; axis off; 
 
 
 % figure();
