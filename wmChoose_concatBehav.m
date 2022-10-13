@@ -18,7 +18,9 @@
 %        3) remembered angle 2 (uncued for R1/R2-cue)
 
 root_behav  = 'Z:/projects/wmChoose/data';%CC_MGSMap25mm_MB4_behav'; %HACK
-root_target = 'Z:/projects/wmChoose/data'; % where to save things
+ root_target = 'Z:/projects/wmChoose/data'; % where to save things
+
+
 
 subj = {'sub001','sub002','sub003','sub004','sub005','sub006','sub007','sub008','sub009','sub010','sub011','sub012','sub013','sub014','sub016','sub017','sub018','sub019','sub020','sub021'};
 %subj = {'ah','ai'};
@@ -42,7 +44,8 @@ for ss = 1:length(subj)
         
         % look for all behavioral files (not saccades yet) (like: ag_r09_wmChoose_behav1_20170822T141641.mat
 
-        fnm_b = sprintf('%s/%s_r*_wmChoose_behav1_*.mat',root_behav,this_subjID); % because of datestr(now,30), there's a T in the behav files, but not in the saccade files
+         %fnm_b = sprintf('%s/%s_r*_wmChoose_behav1_*.mat',root_behav,this_subjID); % because of datestr(now,30), there's a T in the behav files, but not in the saccade files
+        fnm_b = sprintf('%s/%s_r*_wmChoose_behav_*.mat',root_behav,this_subjID); % because of datestr(now,30), there's a T in the behav files, but not in the saccade files
         tmp_fm_b = dir(fnm_b);
         
         % get rid of "_iEye" files if they exist

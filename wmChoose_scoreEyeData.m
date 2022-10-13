@@ -6,19 +6,20 @@
 
 close all;
 root = 'Z:/projects/wmChoose';
+
 % ifg_fn = 'Y:/li/projects/iEye_ts/examples/p_1000hz.ifg';
 
 ifg_fn = 'Y:\projects\old\iEye_ts\examples\p_1000hz.ifg';
 
 
 %subj = {'aa1','aa2','ab1','ab2','ac1','ac2','ae','af','ag','ah','ai'}; %aa1
-%subj = {'sub001','sub002','sub003','sub004','sub005','sub006','sub007','sub008','sub009','sub010','sub011','sub012','sub013','sub014','sub016','sub017','sub018','sub019','sub020','sub021'};
-subj = {'sub021'};
+subj = {'sub001','sub002','sub003','sub004','sub005','sub006','sub007','sub008','sub009','sub010','sub011','sub012','sub013','sub014','sub016','sub017','sub018','sub019','sub020','sub021'};
+
 
 runs_with_err = {};
 errs = {};
 
-fn_prefix = 'wmChoose_behav1'; % OR _ds_preCue
+fn_prefix = 'wmChoose_behav'; % OR _ds_preCue
 
 QCdir = fullfile(root,'scoring_QC');
 

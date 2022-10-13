@@ -1,14 +1,15 @@
 
 close all;
+%root = 'Z:/projects/wmChoose';
+root = 'Z:/projects/wmChooseSD1';
 
-root = 'Z:/projects/wmChoose';
 ifg_fn = 'C:/Users/li/Documents/MATLAB/iEye_ts/examples/p_1000hz.ifg';
 
-subj = {'sub002'};
+subj = {'sub001','sub002','sub003'};
 
 runs_with_err = {};
 errs = {};
-
+%fn_prefix = 'wmChoose_behavSD1'; % OR _ds_preCue
 fn_prefix = 'wmChoose_behav1'; % OR _ds_preCue
 
 % set up iEye params

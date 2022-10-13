@@ -13,8 +13,10 @@
 % 22: large error for primary saccade
 
 root = 'Z:/projects/wmChoose';
+%root = 'Z:/projects/wmChooseSD1';
 subj = {'sub001','sub002','sub003','sub004','sub005','sub006','sub007','sub008','sub009','sub010','sub011','sub012','sub013','sub014','sub016','sub017','sub018','sub019','sub020','sub021'};
 %subj = {'sub001','sub003','sub004','sub005','sub007','sub008','sub010','sub011','sub012','sub013','sub016','sub017','sub018','sub019','sub020'};
+
 
 %WHICH_EXCL = [11 13 20 21 22]; % don't exclude trials w/ calibration failures for now...
 WHICH_EXCL = [13 20 21]; % don't exclude trials w/ calibration failures for now...
@@ -37,6 +39,7 @@ all_data = [];
 startidx = 1;
 
 for ss = 1:length(subj)
+    %fn = sprintf('%s/data/%s_wmChoose_behav.mat',root,subj{ss});
     fn = sprintf('%s/data/%s_wmChoose_behav.mat',root,subj{ss});
     fprintf('Loading trial information from %s\n',fn);
     this_data = load(fn);
@@ -466,6 +469,23 @@ for cc = 1:length(cu)
 
 end
 
+percentPerCond_useTrial = nan(length(u_subj),3);
+percentPerCond_excTrial = nan(length(u_subj),3);
+numPerCond_useTrial = nan(length(u_subj),3);
+
+for cc = 1:length(cu)
+    for ss = 1:length(u_subj)
+
+        thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==1;
+        thisidx2 = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==0;
+        thisidx3 = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc);
+        percentPerCond_useTrial(ss,cc) = sum(thisidx)/sum(thisidx3);
+        percentPerCond_excTrial(ss,cc) = sum(thisidx2)/sum(thisidx3);
+        numPerCond_useTrial(ss,cc) = sum(thisidx);
+        
+    end
+
+end
 % - trace for each condition; distribution for each condition
 
 %% response saccade trajectories for examplar subj, condition
@@ -915,7 +935,6 @@ end
 
 
 %% plot probability for R2choose against R1 precision as function of location bin  plus correlation 
-
 my_Bin = 0:30:360; % create bin limit for 0 to 360, make 1 bin for 30 degree interval therefore result in 12 bins in total
 %[BINS, EDGES] = discretize(X,N) where N is a scalar integer, divides the range of X into N uniform bins, and also returns the bin edges.
 location_Bin = discretize(all_data.s_all.TarT360,my_Bin);%put target location data into bin from 1-12, e.g., 1 is 0-30 degree and so on.
@@ -955,9 +974,21 @@ for ss = 1:length(u_subj) % go through all the subjects
         all_R1muErr(bb) = this_x;
         all_LOC_nChoose (bb) = this_y;
 
+        
     end
 
-    all_corr(ss) = corr(all_R1muErr,all_LOC_nChoose);
+    if strcmpi(u_subj{ss},'sub006')
+        disp('STOP')
+    end
+
+    % ONLY COMPUTE BASED ON NON-NAN VALUES
+    excl_vals = isnan(all_R1muErr) | isnan(all_LOC_nChoose);
+    if any(excl_vals)
+        fprintf('SUBJ %s - excluding %i BINS!!!\n',u_subj{ss},sum(excl_vals));
+    end
+    all_corr(ss) = corr(all_R1muErr(~excl_vals),all_LOC_nChoose(~excl_vals));
+
+    clear excl_vals;
 
     text(4.5,0.27,u_subj{ss},'FontAngle','italic','HorizontalAlignment','right');
 
@@ -997,6 +1028,8 @@ ylabel('Correlation');
 % compute and spit out stats for this test
 [~,thisp,~,thisstats] = ttest(all_corr_z);
 
+% ttest run for R2cue and R2random correlation show df = 18 instead of 19,
+% sub 6 nan
 fprintf('\nLocation heuristic analysis: t-test of correlations against 0\n');
 fprintf('T-test: corr against zero, T(%i) = %.05f, p = %.05f, dz = %.05f\n\n',thisstats.df,thisstats.tstat,thisp,thisstats.tstat/sqrt(length(subj)));
 
@@ -1019,52 +1052,106 @@ xlim([-1.1 1.1]); ylim([-1.1 1.1]); axis square; axis off;
 % H = lsline;
 % [R,P] = corrcoef(tmpErr,tmpP);
 % annotation('textbox',[.8 .8 .1 .1],'String',sprintf('R = %.02f, p = %.02f',R(2),P(2)))
-%% plot R2 Cue error against location choice see if correlation needed
+%% R2-best against R2-random precision as function of location bin  plus correlation 
+my_Bin = 0:30:360; % create bin limit for 0 to 360, make 1 bin for 30 degree interval therefore result in 12 bins in total
+%[BINS, EDGES] = discretize(X,N) where N is a scalar integer, divides the range of X into N uniform bins, and also returns the bin edges.
+location_Bin = discretize(all_data.s_all.TarT360,my_Bin);%put target location data into bin from 1-12, e.g., 1 is 0-30 degree and so on.
 
-all_R2muErr= nan(length(my_Bin)-1, length(u_subj));
+bin_colors = hsv(length(my_Bin));%give each bin a distinct color
+
+all_corr = nan(length(u_subj),1);
+% figure();
+% scatter(all_R1muErr(:,1),all_LOC_nChoose(:,1)); 
+% H = lsline;
+% [R,P] = corrcoef(all_R1muErr(:,1),all_LOC_nChoose(:,1));
+% annotation('textbox',[.8 .8 .1 .1],'String',sprintf('R = %.02f, p = %.02f',R(2),P(2)))
+
 figure;
 for ss = 1:length(u_subj) % go through all the subjects
 
     this_n_choose = sum(all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(3) & all_data.use_trial==1);% compute all number of trials in choose condition
 
+    all_R2RmuErr = nan(length(my_Bin)-1,1);
+    all_LOC_nChoose = nan(length(my_Bin)-1,1);
 
     for bb = 1:(length(my_Bin)-1)
 
 
-        %subplot(length(my_Bin),length(u_subj),ss+length(u_subj)*(bb-1)); hold on;
+
         subplot(4,5,ss); hold on;
 
-        thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(2) & all_data.use_trial==1 & location_Bin==bb;
+        thisidx  = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(2) & all_data.use_trial==1 & location_Bin==bb;
         thisidx2 = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(3) & all_data.use_trial==1 & location_Bin==bb;
 
         this_x = mean(all_data.s_all.f_sacc_err(thisidx));% compute the mean of memory error for cue condition
-        this_y = sum(thisidx2)/this_n_choose;% compute the proportion of choose trials in different location bin over the overall number of choose trial
+        this_y = sum(thisidx2)/this_n_choose; % compute the proportion of choose trials in different location bin over the overall number of choose trial
 
-        plot(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));
-        %scatter(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));%,'MarkerFaceColor',cond_colors(cc,:));
-        all_LOC_nChoose(bb,ss) = this_y;
-        all_R2muErr(bb,ss) = this_x;
+        
+        plot(this_x,this_y,'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:),'MarkerSize',4);
 
+        all_R2RmuErr(bb) = this_x;
+        all_LOC_nChoose (bb) = this_y;
+
+        
     end
 
-    text(4.5,0.35,u_subj{ss},'FontAngle','italic','HorizontalAlignment','right');
+    if strcmpi(u_subj{ss},'sub006')
+        disp('STOP')
+    end
+
+    % ONLY COMPUTE BASED ON NON-NAN VALUES
+    excl_vals = isnan(all_R2RmuErr) | isnan(all_LOC_nChoose);
+    if any(excl_vals)
+        fprintf('SUBJ %s - excluding %i BINS!!!\n',u_subj{ss},sum(excl_vals));
+    end
+    all_corr(ss) = corr(all_R2RmuErr(~excl_vals),all_LOC_nChoose(~excl_vals));
+
+    clear excl_vals;
+
+    text(4.5,0.27,u_subj{ss},'FontAngle','italic','HorizontalAlignment','right');
 
 
-    xlim([0 5]);ylim([0 0.4]);
-%    xticks(0:2:6);yticks(0:0.2:0.4);
+    xlim([0 5]);ylim([0 0.3]);
+    xticks(0:2:6);yticks(0:0.1:0.3);
 
     % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]);
-    if ss == 16; xlabel('R1 Error (MAE; °)'); ylabel('Proportion of Choose');end
+    if ss == 16; xlabel('R2-random Error (MAE; °)'); ylabel('R2-best: Proportion location chosen');end
     set(gca,'TickDir','out','LineWidth',0.75);
 
-
-    set(gca,'TickDir','out','XTick',[0:2:5],'YTick',[0:0.2:0.5]);
-    if ss == 16; xlabel('R2 Cue Error (MAE; °)'); ylabel('Proportion location chosen');end
 end
 
 match_xlim(get(gcf,'Children')); match_ylim(get(gcf,'Children'));
 
 
+all_corr_z = atanh(all_corr);
+
+% compute mean and SEM using R-to-Z transformed values, plot these
+% converted back to R (see below)
+thismz = mean(all_corr_z);
+thisez = std(all_corr_z)/sqrt(length(subj));
+
+
+% plot all correlation values & their mean
+figure; hold on;
+
+plot([1.1;1.1],tanh(thismz+[-1;1]*thisez),'k-','LineWidth',1.5);
+plot(ones(size(all_corr))-0.1,all_corr,'ko','MarkerFaceColor','k');
+plot(1.1,tanh(thismz),'ko','MarkerSize',10,'LineWidth',1.5,'MarkerFaceColor','w');
+
+xlim([0.5 1.5]); ylim([-1 1]);xticks(1); yticks(-1:0.5:1);
+set(gca,'TickDir','out','LineWidth',0.75);
+ylabel('Correlation');
+
+
+% compute and spit out stats for this test
+[~,thisp,~,thisstats] = ttest(all_corr_z);
+
+% ttest run for R2cue and R2random correlation show df = 18 instead of 19,
+% sub 6 nan
+fprintf('\nLocation heuristic analysis: t-test of correlations against 0\n');
+fprintf('T-test: corr against zero, T(%i) = %.05f, p = %.05f, dz = %.05f\n\n',thisstats.df,thisstats.tstat,thisp,thisstats.tstat/sqrt(length(subj)));
+
+clear thisp thisstats;
 %% plot error against rt see if correlation needed
 
 all_corr_RT_err = nan(length(cu),length(u_subj));
@@ -1172,6 +1259,62 @@ for cc = 1:size(all_corr_RT_err,1)
 
 
 end 
+
+%set(gca,'LineWidth',0.75,'FontSize',14);set(gcf,'Color','w')
+%% number of saccades by subj, condition
+all_nsacd = nan(length(u_subj),3);
+
+
+for cc = 1:length(cu)
+    for ss = 1:length(u_subj)
+
+        thisidx = all_data.subj_all==ss & all_data.s_all.trialinfo(:,1)==cu(cc) & all_data.use_trial==1;
+
+        all_nsacd(ss,cc)= mean(all_data.s_all.n_sacc(thisidx));
+        
+       
+    end
+end
+
+%[h,p,ci,stats] = ttest(all_nsacd(:,2),all_nsacd(:,3));
+
+thisd = nan(length(u_subj),length(cu));
+thisd_anova = nan(length(u_subj)*length(cu),1);
+thisX_anova = nan(length(u_subj)*length(cu),2); % cond,subj
+cnt = 1;
+for cc = 1:length(cu)
+    for ss = 1:length(u_subj)
+        thisidx = all_data.subj_all==ss & all_data.c_all(:,1)==cu(cc) & all_data.use_trial==1;
+        thisd(ss,cc) = mean(all_data.s_all.n_sacc(thisidx));  
+        thisd_anova(cnt) = thisd(ss,cc);
+        thisX_anova(cnt,:) = [cu(cc) ss];
+        cnt = cnt+1;
+    end
+   
+end
+
+
+    for cp = 1:size(cond_pairs,1)
+
+        [~,thisp,~,thisstats] = ttest(thisd(:,cond_pairs(cp,1)),thisd(:,cond_pairs(cp,2)));
+
+        fprintf('T-test: %s vs %s, T(%i) = %.03f, p = %0.05f, dz = %0.05f\n',cond_str{cond_pairs(cp,1)},cond_str{cond_pairs(cp,2)}, thisstats.df,thisstats.tstat,thisp,thisstats.tstat/sqrt(length(subj)));
+
+        clear thisp thisstats;
+
+    end
+% stats for this parameter (ANOVA)
+[thisp,thisanovatab] = anovan( thisd_anova,thisX_anova  , 'random',2,'varnames',{'condition','subj'},'model','interaction' ,'display','off');
+
+% compute partial eta squared (SS_cond/(SS_cond+SS_err))
+this_peta2 = thisanovatab{2,2}/(thisanovatab{2,2}+thisanovatab{4,2}); % SS_cond/(SS_cond + SS_cond*subj)
+
+%[thisp,thisanovatab] = anovan( thisd_anova,thisX_anova  , 'random',2,'varnames',{'condition','subj'},'model','interaction');
+fprintf('1-way RM AOV: F(%i,%i) = %.03f, p = %0.05f, partial eta^2 = %0.05f\n\n',thisanovatab{2,3},thisanovatab{4,3},thisanovatab{2,6},thisp(1),this_peta2);
+
+clear thisp thisanovatab thisd_anova thisX_anova;
+
+
 %% stats - shuffle condition labels within each subj before computing distributions, F-scores
 % - use only included trials? yes
 
