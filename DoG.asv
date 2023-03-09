@@ -25,7 +25,7 @@
 
 root = 'Z:/projects/wmChooseSD1';
 % subj = {'sub001','sub002','sub003','sub020','sub022','sub024','sub025','sub026','sub027','sub028','sub032','sub034','sub035','sub036','sub037','sub039','sub043','sub044','sub045','sub046','sub047'};
-subj = {'sub001','sub002','sub003','sub020','sub022','sub024','sub025','sub026','sub027','sub028','sub032','sub034','sub035','sub036','sub037','sub044','sub045','sub046','sub047'};
+ subj = {'sub001','sub002','sub003','sub020','sub022','sub024','sub025','sub026','sub027','sub028','sub032','sub034','sub035','sub036','sub037','sub044','sub045','sub046','sub047'};
 % subj = {'sub001'};
 %WHICH_EXCL = [11 13 20 21 22]; % don't exclude trials w/ calibration failures for now...
 WHICH_EXCL = [13 20 21]; % don't exclude trials w/ calibration failures for now...
@@ -138,95 +138,140 @@ for ss = 1:length(u_subj)
 end
 all_data.use_trial(all_data.t_all == 1) = 0;
 
-%% plot target loc against report loc
+%% plot error distribution 
+figure;
+for ss = 1:length(u_subj)
+
+
+    subplot(3,7,ss); hold on
+
+    thisidx = all_data.subj_all==ss & all_data.use_trial==1;
+
+    histogram(all_data.s_all.f_sacc_align180(thisidx),10);%,'BinLimits',[0 30]
+
+    if ss == 1
+
+        xlabel('Response Error (°)');ylabel('Frequence');
+           
+    end
+ xlim([-180 180]);%ylim([0 100]);
+ title(u_subj{ss});
+end
+
+figure;
+for ss = 1:length(u_subj)
+
+
+    subplot(3,7,ss); hold on
+
+    thisidx = all_data.subj_all==ss & all_data.use_trial==1;
+
+    histogram(all_data.s_all.f_sacc_err(thisidx),10);%,'BinLimits',[0 30]
+
+    if ss == 1
+
+        xlabel('Absolute Response Error (MAE;°)');ylabel('Frequence');
+           
+    end
+ %xlim([-180 180]);%ylim([0 100]);
+ title(u_subj{ss});
+end
 
 figure;
 for ss = 1:length(u_subj)
     subplot(3,7,ss); hold on
-    histogram(all_data.s_all.f_sacc_err, 45,'BinLimits',[0 5]);
+    thisidx = all_data.subj_all==ss & all_data.use_trial==1;
+    histogram(all_data.s_all.i_sacc_rt(thisidx));%45,'BinLimits',[0 1.5]
 
-    xlabel('Final Saccade Error (MAE;°)');
+    xlabel('RT (s)');
     title(u_subj{ss});
-
+    xlim([0 2]);
 end
 
-
+%% plot target loc against report loc
 
 figure;
 for ss = 1:length(u_subj)
 
 
-        subplot(3,7,ss); hold on;
+    subplot(3,7,ss); hold on;
 
-        thisidx = all_data.subj_all==ss & all_data.use_trial==1;
-        thisidx2 = find(thisidx);
-        
-   
-           scatter(all_data.s_all.targAng360(thisidx2),all_data.s_all.f_sacc_ang360(thisidx2),10,'r','filled', 'markerfacealpha',.5);
-               
+    thisidx = all_data.subj_all==ss & all_data.use_trial==1;
+    thisidx2 = find(thisidx);
 
-     xlim([0 360]);ylim([0 360]);
-     set(gca,'TickDir','out','XTick',[0 180 360],'YTick',[0 180 360]); 
-     xlabel('Target location (°)'); ylabel('Reported location (°)');
-     axis square;
-    
+
+    scatter(all_data.s_all.targAng360(thisidx2),all_data.s_all.f_sacc_ang360(thisidx2),10,'r','filled', 'markerfacealpha',.5);
+
+    if ss == 1
+
+        xlabel('Absolute Response Error (MAE;°)');ylabel('Frequence');
+
+
+        xlabel('Target location (°)'); ylabel('Reported location (°)');
+    end
+    xlim([0 360]);ylim([0 360]);
+    set(gca,'TickDir','out','XTick',[0 180 360],'YTick',[0 180 360]);
+    title(u_subj{ss});
+    axis square;
+
+
 end
 
-% %% plot error as function of targ location
-% my_Bin = 0:30:360; % create bin limit for 0 to 360, make 1 bin for 30 degree interval therefore result in 12 bins in total
-% %[BINS, EDGES] = discretize(X,N) where N is a scalar integer, divides the range of X into N uniform bins, and also returns the bin edges.
-% location_Bin = discretize(all_data.s_all.targAng360,my_Bin);%put target location data into bin from 1-12, e.g., 1 is 0-30 degree and so on.
-% 
-% bin_colors = hsv(length(my_Bin));%give each bin a distinct color
-% 
-% figure;
-% for ss = 1:length(u_subj) % go through all the subjects
-% 
-% 
-%     subplot(3,7,ss);hold on % create 20 plots in 4 by 5 arrangement
-%     for bb = 1:(length(my_Bin)-1) % loop over 1 to 11 because we want 12 interval from 13 numbers, 0 and 360 is the same here
-% 
-%         thisidx = all_data.subj_all==ss & all_data.use_trial==1 & location_Bin==bb;
-%         thisidx2 = find(thisidx);% minimize the data size for plot by selecting a group of data with the above criterions
-% 
-% 
-%         plot((my_Bin(bb+1)+my_Bin(bb))/2,mean(all_data.s_all.f_sacc_err(thisidx2)),'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:),'MarkerSize',4);
-%     end %plot(data point on x axis is ploted on the center of each interval e.g., (0+30)/2 = 15 and so on for all bin
-% 
-%     text(330,4.5,u_subj{ss},'FontAngle','italic','HorizontalAlignment','right');
-% 
-%     xlim([0 360]);ylim([0 5]);
+%% plot error as function of targ location
+my_Bin = -180:30:180; % create bin limit for 0 to 360, make 1 bin for 30 degree interval therefore result in 12 bins in total
+%[BINS, EDGES] = discretize(X,N) where N is a scalar integer, divides the range of X into N uniform bins, and also returns the bin edges.
+location_Bin = discretize(all_data.s_all.targAng180,my_Bin);%put target location data into bin from 1-12, e.g., 1 is 0-30 degree and so on.
+
+bin_colors = hsv(length(my_Bin));%give each bin a distinct color
+
+figure;
+for ss = 1:length(u_subj) % go through all the subjects
+
+
+    subplot(3,7,ss);hold on % create 20 plots in 4 by 5 arrangement
+    for bb = 1:(length(my_Bin)-1) % loop over 1 to 11 because we want 12 interval from 13 numbers, 0 and 360 is the same here
+
+        thisidx = all_data.subj_all==ss & all_data.use_trial==1 & location_Bin==bb;
+        thisidx2 = find(thisidx);% minimize the data size for plot by selecting a group of data with the above criterions
+
+
+        plot((my_Bin(bb+1)+my_Bin(bb))/2,mean(all_data.s_all.f_sacc_align180(thisidx2)),'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:),'MarkerSize',4);
+    end %plot(data point on x axis is ploted on the center of each interval e.g., (0+30)/2 = 15 and so on for all bin
+
+    text(330,4.5,u_subj{ss},'FontAngle','italic','HorizontalAlignment','right');
+
+%     xlim([0 360]);%ylim([0 5]);
 %     xticks([0 90 180 270 360]);
-%     yticks([0 10]);
-%     % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]);
-%     if ss == 1; xlabel('Target location (°)'); ylabel('Final Saccade Error (MAE; °)'); end
-%     set(gca,'TickDir','out','LineWidth',0.75);
-% 
-% end
-% 
-% %same graph collapse across sub
-% figure;
-% for ss = 1:length(u_subj) 
-%     for bb = 1:(length(my_Bin)-1) 
-%         subplot(1,1,1);hold on
-%         thisidx = all_data.subj_all==ss & all_data.use_trial==1 & location_Bin==bb;
-%         thisidx2 = find(thisidx);% minimize the data size for plot by selecting a group of data with the above criterions
-% 
-%         plot((my_Bin(bb+1)+my_Bin(bb))/2,mean(all_data.s_all.f_sacc_err(thisidx2)),'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));
-%         
-%     end 
-% 
-%     xlim([0 360]);ylim([0 10]);
-%     xticks([0 90 180 270 360]);
-% 
-%     xlabel('Target location (°)'); ylabel('Final Saccade Error (MAE; °)');
-%     set(gca,'TickDir','out');
-% end
+    %yticks([0 10]);
+    % set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]);
+    if ss == 1; xlabel('Target location (°)'); ylabel('Final Saccade Error (°)'); end
+    set(gca,'TickDir','out','LineWidth',0.75);
+
+end
+
+%same graph collapse across sub
+figure;
+for ss = 1:length(u_subj) 
+    for bb = 1:(length(my_Bin)-1) 
+        subplot(1,1,1);hold on
+        thisidx = all_data.subj_all==ss & all_data.use_trial==1 & location_Bin==bb;
+        thisidx2 = find(thisidx);% minimize the data size for plot by selecting a group of data with the above criterions
+
+        plot((my_Bin(bb+1)+my_Bin(bb))/2,mean(all_data.s_all.f_sacc_err(thisidx2)),'o','Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:));
+        
+    end 
+
+    xlim([0 360]);ylim([0 10]);
+    xticks([0 90 180 270 360]);
+
+    xlabel('Target location (°)'); ylabel('Final Saccade Error (MAE; °)');
+    set(gca,'TickDir','out');
+end
 
 %% plot targdiff against error
 
 for ss= 1:length(u_subj)
-    subplot(1,length(u_subj),ss); hold on
+    subplot(4,5,ss); hold on
 %     plot(targ_diff(all_data.subj_all == ss), all_data.s_all.f_sacc_align180(all_data.subj_all == ss),'ko','MarkerFaceColor','k','');
     scatter(targ_diff(all_data.subj_all == ss & all_data.use_trial==1), all_data.s_all.f_sacc_align180(all_data.subj_all == ss & all_data.use_trial==1),10,'k','filled','MarkerFaceAlpha',0.25);%MarkerFaceColor','k','');
     if ss ==1
@@ -240,27 +285,9 @@ for ss= 1:length(u_subj)
     axis square;
 end
 %% practice SD shading graph
-y = all_data.s_all.f_sacc_align180(all_data.subj_all == ss & all_data.use_trial==1); % your mean vector;
-x = targ_diff(all_data.subj_all == ss & all_data.use_trial==1);
-std_dev = std1;
-curve1 = y + std_dev;
-curve2 = y - std_dev;
-x2 = [x, fliplr(x)];
-inBetween = [curve1, fliplr(curve2)];
-fill(x2, inBetween, 'g');
-hold on;
-plot(x, y, 'r', 'LineWidth', 2);
-
-%% SD plot with response bias against target location differences bin
-%%% TODO: plot group moving average of response errors with standard error in shading  
-
-my_Bin = -180:10:180; % create bin limit for -180 to 180, make 1 bin for 10 degree interval therefore result in 37 bins in total
-
-%[BINS, EDGES] = discretize(X,N) where N is a scalar integer, divides the range of X into N uniform bins, and also returns the bin edges.
+my_Bin = -180:10:180;
 diff_Bin = discretize(targ_diff,my_Bin);%put target location data into bin from 1-4, e.g., 1 is 0-90 degree and so on.
-bin_colors = hsv(length(my_Bin));%give each bin a distinct color
 
-% which_subj_traj = 1; % to plot all, do which_subj_traj = u_subj;
 
 for ss= 1:length(u_subj)
 
@@ -270,9 +297,19 @@ for ss= 1:length(u_subj)
 
         thisidx = all_data.subj_all==ss & all_data.use_trial==1 & diff_Bin==bb;
 
-        plot((my_Bin(bb+1)+my_Bin(bb))/2,mean(all_data.s_all.f_sacc_align180(thisidx)),'ko');%,'Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:),'MarkerSize',4);
+%         plot((my_Bin(bb+1)+my_Bin(bb))/2,mean(all_data.s_all.f_sacc_align180(thisidx)),'ko');%,'Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:),'MarkerSize',4);
 
-%SEM = std(all_data.s_all.f_sacc_align180(thisidx))/sqrt(length(all_data.s_all.f_sacc_align180(thisidx)).....
+        y = mean(all_data.s_all.f_sacc_align180(thisidx)); % your mean vector;
+        x =(my_Bin(bb+1)+my_Bin(bb))/2;
+        SEM = std(all_data.s_all.f_sacc_align180(thisidx))/sqrt((length(all_data.s_all.f_sacc_align180(thisidx))));
+        curve1 = y + SEM;
+        curve2 = y - SEM;
+        x2 = [x, fliplr(x)];
+        inBetween = [curve1, fliplr(curve2)];
+        fill(x2, inBetween, 'g');
+        hold on;
+        plot(x, y, 'r-', 'LineWidth', 2);
+
         if ss ==1
             xlabel('target difference between current trial and previous trial in angle')
             ylabel('final saccade error with algined target location')
@@ -285,18 +322,69 @@ for ss= 1:length(u_subj)
     %     axis square;
     %set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]);
 end
-%% plot RT distribution and targdiff against RT
 
-figure;
-for ss = 1:length(u_subj)
-    subplot(3,7,ss); hold on
-    histogram(all_data.s_all.i_sacc_rt, 45,'BinLimits',[0 1.5]);
 
-    xlabel('RT (s)');
-    title(u_subj{ss});
+%% SD plot with response bias against target location differences bin
+%%% TODO: plot group moving average of response errors with standard error in shading  
 
+my_Bin = -180:10:180; % create bin limit for -180 to 180, make 1 bin for 10 degree interval therefore result in 37 bins in total
+
+%[BINS, EDGES] = discretize(X,N) where N is a scalar integer, divides the range of X into N uniform bins, and also returns the bin edges.
+diff_Bin = discretize(targ_diff,my_Bin);%put target location data into bin from 1-4, e.g., 1 is 0-90 degree and so on.
+
+mean_f_sacc_align180 = nan(length(u_subj)*length(my_Bin),1);
+
+
+for ss= 1:length(u_subj)
+
+    subplot(3,7,ss); hold on;
+
+    for bb = 1:(length(my_Bin)-1)
+
+        thisidx = all_data.subj_all==ss & all_data.use_trial==1 & diff_Bin==bb;
+        
+%         plot(xi, yi, '-r');
+        plot((my_Bin(bb+1)+my_Bin(bb))/2,mean(all_data.s_all.f_sacc_align180(thisidx)),'k.');%,'Color',bin_colors(bb,:),'MarkerFaceColor',bin_colors(bb,:),'MarkerSize',4);
+%         mean_f_sacc_align180(ss) = mean(all_data.s_all.f_sacc_align180(thisidx));
+
+        SEM_neg = -1*std(all_data.s_all.f_sacc_align180(thisidx))/sqrt((length(all_data.s_all.f_sacc_align180(thisidx))));
+        SEM_pos = std(all_data.s_all.f_sacc_align180(thisidx))/sqrt((length(all_data.s_all.f_sacc_align180(thisidx))));
+
+        plot((my_Bin(bb+1)+my_Bin(bb))/2,SEM_neg,'ro')
+        plot((my_Bin(bb+1)+my_Bin(bb))/2,SEM_pos,'ro')
+
+        if ss ==1
+            xlabel('target difference between current trial and previous trial in angle')
+            ylabel('final saccade error with algined target location')
+
+        end
+
+    end
+
+    title(u_subj{ss})
+    xlim([-180 180]);ylim([-10 10]);
+    %     axis square;
+    %set(gca,'TickDir','out','XTick',[-180 0 180],'YTick',[-180 0 180]);
 end
 
+%% plot smooth line practice
+thisidx = all_data.use_trial==1;
+XA = diff_Bin(thisidx);
+YA = all_data.s_all.f_sacc_align180(thisidx);
+x = XA;
+y = YA;
+xi = linspace(min(x), max(x), 10000);                    
+yi = interp1(x, y, xi, 'pchip', 'extrap');
+figure(1)
+plot(x, y, 'bp')
+hold on
+plot(xi, yi, '-r')
+hold off
+grid
+xlabel('X')
+ylabel('Y')
+legend('Original Data', 'Interpolation', 'Location', 'NE')
+%% plot RT against targdiff
 
 figure;
 for ss= 1:length(u_subj)
@@ -394,6 +482,39 @@ clear a w y bf_params;
 
 end
 
+%% ttest for a and w estimate
+figure;
+histogram(opt_param(:,1));% distribution for width
+histogram(opt_param(:,2));% distribution for amplitude
+
+% Shapiro-Wilk test for normality
+
+[SW] = swft(opt_param(:,1));
+disp(SW);% normality assumption violated when p < .05.
+
+[SW] = swft(opt_param(:,2));
+disp(SW);% normality assumption violated when p < .05.
+
+% Wilcoxon signed-rank test
+alpha = 0.05;
+[P,H] = signrank(opt_param(:,1),0,'Alpha',alpha); % if h = 1, p < .05, null rejected.
+disp(H);
+
+[P,H] = signrank(opt_param(:,2),0,'Alpha',alpha); % if h = 1, p < .05, null rejected.
+disp(H);
+
+% % one sample t test against zero
+% [h,p,ci,stats] = ttest(opt_param(:,1));
+% disp(h);
+% 
+% [h,p,ci,stats] = ttest(opt_param(:,2));
+% disp(h);
+
+%% bayes Factor ttest
+
+hypothesized_mean = 0;
+
+[bf10,p] = bf.ttest(opt_param(:,2),hypothesized_mean) % if bf10 > 10, super strong evidence in favor of the alternative hypothesis
 
 %% parameter fit
 
@@ -404,10 +525,28 @@ figure;
 subplot(1,2,1);hold on
 
 plot(0, opt_param(good_sub,1),'ko');
+
+ylabel('Width')
 subplot(1,2,2);
 plot(1, opt_param(good_sub,2),'ro')
+
+ylabel('Amplitude')
+
+
 figure;
 scatter(opt_param(good_sub,1),opt_param(good_sub,2))
+xlabel('Width')
+ylabel('Amplitude')
+
+
+figure;
+Numofgood_subj = (1:19);
+
+% plot SD amplitude by subj
+plot(good_subj,sort(opt_param(:,2)),'ko');
+
+xlabel('Subjects (arbiturary number)')
+ylabel('Serial Dependence (°)')
 
 %% loop over to find better initial guess
 % guess range for a [0 0.032 8], w [0 0.004 1];
@@ -418,12 +557,14 @@ scatter(opt_param(good_sub,1),opt_param(good_sub,2))
 % average opt_ve
 
 
-%% plot SD amplitude by subj
+
+
+sub_unique = unique(all_subj);
 
 figure;
 for ss = 1:length(u_subj)
     
-    plot(good_subNum.',opt_param(:,2),'ko')
+    plot(sub_unique,opt_param(:,2),'ko')
     xlabel('subjects')
     ylabel('Serial Dependence (°)')
   
